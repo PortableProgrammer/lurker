@@ -23,14 +23,15 @@ jobs:
           DOCKER_IMAGE=lurker
           DOCKER_PLATFORMS=linux/amd64,linux/arm64
           VERSION=edge
+          REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
 
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
           fi
           
-          TAGS="--tag ${DOCKER_IMAGE}:${VERSION} --tag ${{ github.repository_owner }}/${DOCKER_IMAGE}:${VERSION}"
+          TAGS="--tag ${DOCKER_IMAGE}:${VERSION} --tag ${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION}"
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?$ ]]; then
-            TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest --tag ${{ github.repository_owner }}/${DOCKER_IMAGE}:latest"
+            TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest --tag ${REPO_OWNER}/${DOCKER_IMAGE}:latest"
           fi
 
           echo "docker_image=${DOCKER_IMAGE}" >> "$GITHUB_ENV"
@@ -58,7 +59,7 @@ jobs:
       - name: Docker Push
         if: success() && github.event_name != 'pull_request'
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/${DOCKER_IMAGE}:${VERSION}
+          docker push ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION}
       
       - name: Docker Check Manifest
         if: success() && github.event_name != 'pull_request'
