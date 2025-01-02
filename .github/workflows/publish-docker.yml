@@ -28,9 +28,9 @@ jobs:
             VERSION=${GITHUB_REF#refs/tags/v}
           fi
           
-          TAGS="--tag ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION} --tag ${DOCKER_IMAGE}:${VERSION}"
+          TAGS="--tag ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION}"
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?$ ]]; then
-            TAGS="$TAGS --tag ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:latest --tag ${DOCKER_IMAGE}:latest"
+            TAGS="$TAGS --tag ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:latest"
           fi
 
           echo "docker_image=${DOCKER_IMAGE}" >> "$GITHUB_ENV"
