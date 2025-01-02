@@ -37,7 +37,6 @@ jobs:
           echo "docker_image=${DOCKER_IMAGE}" >> "$GITHUB_ENV"
           echo "version=${VERSION}" >> "$GITHUB_ENV"
           echo "repo_owner=${REPO_OWNER}" >> "$GITHUB_ENV"
-          echo "tags=${TAGS}" >> "$GITHUB_ENV"
           echo "buildx_args=--platform ${DOCKER_PLATFORMS} --build-arg VERSION=${VERSION} --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=${GITHUB_SHA::8} ${TAGS} --file ./Dockerfile ./" >> "$GITHUB_ENV"
 
       - name: Set up QEMU
@@ -61,8 +60,8 @@ jobs:
       - name: Docker Push
         if: success() && github.event_name != 'pull_request'
         run: |
-          docker tag ${DOCKER_IMAGE}:${VERSION} ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION}
-          docker push ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION}
+          docker tag ${{ env.docker_image }}:${{ env.version }} ghcr.io/${{ env.repo_owner }}/${{ env.docker_image }}:${{ env.version }}
+          docker push ghcr.io/${{ env.repo_owner }}/${{ env.docker_image }}:${{ env.version }}
       
       - name: Clear
         if: always() && github.event_name != 'pull_request'
