@@ -57,6 +57,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Docker Images
+        if: success() && github.event_name != 'pull_request'
+        run: |
+          docker images
+
       - name: Docker Push
         if: success() && github.event_name != 'pull_request'
         run: |
