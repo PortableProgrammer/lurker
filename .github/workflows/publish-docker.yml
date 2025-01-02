@@ -21,7 +21,7 @@ jobs:
         id: prepare
         run: |
           DOCKER_IMAGE=lurker
-          DOCKER_PLATFORMS=linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64
+          DOCKER_PLATFORMS=linux/amd64,linux/arm64
           VERSION=edge
 
           if [[ $GITHUB_REF == refs/tags/* ]]; then
@@ -61,7 +61,7 @@ jobs:
           docker buildx build --output "type=image,push=true" ${{ env.buildx_args }}
       
       - name: Docker Check Manifest
-        if: always() && github.event_name != 'pull_request'
+        if: success() && github.event_name != 'pull_request'
         run: |
           docker run --rm mplatform/mquery ${{ env.docker_image }}:${{ env.version }}
       
