@@ -23,20 +23,18 @@ jobs:
           DOCKER_IMAGE=lurker
           DOCKER_PLATFORMS=linux/amd64,linux/arm64
           VERSION=edge
-          REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
 
           if [[ $GITHUB_REF == refs/tags/* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
           fi
           
-          TAGS="--tag ${DOCKER_IMAGE}:${VERSION} --tag ${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION}"
+          TAGS="--tag ${DOCKER_IMAGE}:${VERSION}"
           if [[ $VERSION =~ ^[0-9]{1,3}\.[0-9]{1,3}(\.[0-9]{1,3})?$ ]]; then
-            TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest --tag ${REPO_OWNER}/${DOCKER_IMAGE}:latest"
+            TAGS="$TAGS --tag ${DOCKER_IMAGE}:latest"
           fi
 
           echo "docker_image=${DOCKER_IMAGE}" >> "$GITHUB_ENV"
           echo "version=${VERSION}" >> "$GITHUB_ENV"
-          echo "repo_owner=${REPO_OWNER}" >> "$GITHUB_ENV"
           echo "buildx_args=--platform ${DOCKER_PLATFORMS} --build-arg VERSION=${VERSION} --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') --build-arg VCS_REF=${GITHUB_SHA::8} ${TAGS} --file ./Dockerfile ./" >> "$GITHUB_ENV"
 
       - name: Set up QEMU
@@ -60,6 +58,7 @@ jobs:
       - name: Docker Push
         if: success() && github.event_name != 'pull_request'
         run: |
+          REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
           docker push ghcr.io/${REPO_OWNER}/${DOCKER_IMAGE}:${VERSION}
       
       - name: Docker Check Manifest
