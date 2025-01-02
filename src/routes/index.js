@@ -32,11 +32,14 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	const subreddit = req.params.subreddit;
 	const isMulti = subreddit.includes("+");
 	const query = req.query ? req.query : {};
+
+	const prefs = get_user_prefs(req.user.id);
+
 	if (!query.sort) {
-		query.sort = "hot";
+		query.sort = prefs.sort;
 	}
 	if (!query.view) {
-		query.view = "compact";
+		query.view = prefs.view;
 	}
 
 	let isSubbed = false;
@@ -194,7 +197,10 @@ router.get("/dashboard", authenticateToken, async (req, res) => {
 				usedAt: Date.parse(inv.usedAt),
 			}));
 	}
-	res.render("dashboard", { invites, isAdmin, user: req.user, query: req.query });
+
+	const prefs = get_user_prefs(req.user.id);
+
+	res.render("dashboard", { invites, isAdmin, user: req.user, query: req.query, prefs });
 });
 
 router.get("/create-invite", authenticateAdmin, async (req, res) => {
@@ -371,7 +377,48 @@ router.post("/unsubscribe", authenticateToken, async (req, res) => {
 	}
 });
 
+// POST /set-pref
+router.post("/set-pref", authenticateToken, async (req, res) => {
+	const { preference, value} = req.body;
+	const user = req.user;
+	
+	switch(preference) {
+		case 'sort':
+			db.query(`
+				UPDATE users
+				SET sortPref = $value
+				WHERE id = $user_id
+			`)
+			.run({ user_id: user.id, value: value });
+			break;
+
+		case 'view':
+			db.query(`
+				UPDATE users
+				SET viewPref = $value
+				WHERE id = $user_id
+			`)
+			.run({ user_id: user.id, value: value });
+			break;
+	}
+});
+
 module.exports = router;
+
+function get_user_prefs(user_id) {
+	const prefs = db.query(`
+		SELECT sortPref, viewPref
+		FROM users
+		WHERE id = $user_id
+	`)
+	.all({ user_id: user_id })
+	.map((pref) => ({
+		sort: pref.sortPref,
+		view: pref.viewPref,
+	}));
+	
+	return prefs[0];
+}
 
 function unescape_submission(response) {
 	const post = response.submission.data;

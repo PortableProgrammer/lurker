@@ -1,5 +1,6 @@
 include ../mixins/header
 include ../mixins/head
+include ../mixins/prefUtils
 include ../utils
 
 doctype html
@@ -14,6 +15,40 @@ html
         if message 
           div.dashboard-error-message
             | #{message}
+
+        if prefs
+          h2 preferences
+
+          details.sorting
+            summary sort: #{prefs.sort}
+            div.sort-opts
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'new')` id=`pref_sort_new`) new
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'rising')` id=`pref_sort_rising`) rising
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top')` id=`pref_sort_top`) top
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=day')` id=`pref_sort_top_day`) top day
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=week')` id=`pref_sort_top_week`) top week
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=month')` id=`pref_sort_top_month`) top month
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=year')` id=`pref_sort_top_year`) top year
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
+
+          details.sorting
+            summary view: #{prefs.view}
+            div.sort-opts
+              div
+                a(href=`/dashboard` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
+              div
+                a(href=`/dashboard` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
+
 
         if isAdmin
           h2 invites
@@ -38,7 +73,3 @@ html
                     a(href=`/delete-invite/${invite.id}`) delete
 
           a(href="/create-invite") create invite
-
-        else
-          p you aren't an admin and therefore there is nothing to see here yet
- 

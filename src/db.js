@@ -65,4 +65,18 @@ runMigration("add-isAdmin-column", () => {
   `).run();
 });
 
+runMigration("add-sort-view-pref-columns", () => {
+  // Add sortPref column
+  db.query(`
+    ALTER TABLE users 
+    ADD COLUMN sortPref TEXT DEFAULT 'hot'
+  `).run();
+
+  // Add viewPref column
+  db.query(`
+    ALTER TABLE users 
+    ADD COLUMN viewPref TEXT DEFAULT 'compact'
+  `).run();
+});
+
 module.exports = { db };

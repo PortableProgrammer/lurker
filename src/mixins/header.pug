@@ -1,6 +1,6 @@
 mixin header(user)
-  - var viewQuery = 'view=' + (query && query.view ? query.view : 'compact')
-  - var sortQuery = 'sort=' + (query ? (query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot') : 'hot')
+  - var viewQuery = 'view=' + (prefs ? prefs.view : (query && query.view ? query.view : 'compact'))
+  - var sortQuery = 'sort=' + (prefs ? prefs.sort : (query ? (query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot') : 'hot'))
   div.header
     div.header-item
       a(href=`/?${sortQuery}&${viewQuery}`) home
