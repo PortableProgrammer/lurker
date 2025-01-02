@@ -398,7 +398,7 @@ form {
     width: 40%;
   }
   .sort-opts {
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(9, 1fr);
     grid-template-rows: repeat(1, 1fr);
     grid-auto-flow: row;
   }
@@ -443,7 +443,7 @@ form {
     width: 20%;
   }
   .sort-opts {
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(9, 1fr);
     grid-template-rows: repeat(1, 1fr);
     grid-auto-flow: row;
   }
@@ -460,7 +460,7 @@ form {
     max-height: 20vh;
   }
   .sort-opts {
-    grid-template-columns: repeat(10, 1fr);
+    grid-template-columns: repeat(9, 1fr);
     grid-template-rows: repeat(1, 1fr);
     grid-auto-flow: row;
   }
