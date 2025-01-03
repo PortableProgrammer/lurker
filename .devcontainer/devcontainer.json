@@ -18,7 +18,8 @@
 		"vscode": {
 			"extensions": [
 				"oven.bun-vscode",
-				"qwtel.sqlite-viewer"
+				"qwtel.sqlite-viewer",
+				"github.vscode-github-actions"
 			]
 		}
 	}
