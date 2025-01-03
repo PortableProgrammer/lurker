@@ -29,6 +29,7 @@ app.use(
 app.use("/", routes);
 
 const port = process.env.LURKER_PORT;
-const server = app.listen(port ? port : 3000, "0.0.0.0", () => {
+//const server = app.listen(port ? port : 3000, "0.0.0.0", () => {
+const server = app.listen(port ? port : 3000, () => {
 	console.log("started on", server.address());
 });
