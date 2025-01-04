@@ -84,6 +84,9 @@ a:visited {
   display: flex;
   flex-direction: row;
   justify-content: center;
+  position: sticky;
+  top: 0;
+  background-color: var(--bg-color);
 }
 
 .sub-title {
