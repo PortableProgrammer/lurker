@@ -1,11 +1,12 @@
 include ../mixins/header
 include ../mixins/head
-include ../mixins/prefUtils
 include ../utils
 
 doctype html
 html
   +head("dashboard")
+  include ../mixins/prefUtils
+
   body
     main#content
       +header(user)
@@ -19,9 +20,9 @@ html
         if prefs
           h2 preferences
 
-          details.sorting
+          details.preference
             summary sort: #{prefs.sort}
-            div.sort-opts
+            div.pref-opts
               div
                 a(href=`/dashboard` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
               div
@@ -43,14 +44,16 @@ html
               div
                 a(href=`/dashboard` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
 
-          details.sorting
+          details.preference
             summary view: #{prefs.view}
-            div.sort-opts
+            div.pref-opts
               div
                 a(href=`/dashboard` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
               div
                 a(href=`/dashboard` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
-
+          div.preference
+            input(type="checkbox" id="pref_collapseAutoMod" checked=prefs.collapseAutoMod!==0 onclick=`togglePref('collapseAutoMod')`)
+            label(for="pref_collapseAutoMod") Collapse AutoMod Comments
 
         if isAdmin
           h2 invites

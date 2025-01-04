@@ -79,4 +79,12 @@ runMigration("add-sort-view-pref-columns", () => {
   `).run();
 });
 
+// Add Collapse AutoMod pref
+runMigration("add-collapse-automod-pref-column", () => {
+  db.query(`
+    ALTER TABLE users
+    ADD COLUMN collapseAutoModPref BOOLEAN DEFAULT 0
+  `).run();
+});
+
 module.exports = { db };

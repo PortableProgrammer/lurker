@@ -1,5 +1,14 @@
 -
 script(defer).
+    async function togglePref(pref) {
+        let toggle = document.getElementById(`pref_${pref}`);
+        if (toggle.checked) {
+            await savePref(pref, 1);
+        } else {
+            await savePref(pref, 0);
+        }
+    }
+
     async function setPref(pref, value) {
         await savePref(pref, value);
     }

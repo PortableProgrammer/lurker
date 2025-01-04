@@ -61,7 +61,7 @@ main {
 .sub-title a,
 .info-container a,
 .comment-info-container a,
-.sort-opts a,
+.pref-opts a,
 .more a
 {
   text-decoration: none;
@@ -96,16 +96,16 @@ a:visited {
   align-items: center;
 }
 
-.sorting {
+.preference {
   margin-top: 20px;
 }
 
-.sort-opts {
+.pref-opts {
   display: grid;
   margin: 10px;
 }
 
-.sort-opts {
+.pref-opts {
   grid-template-columns: repeat(2, 1fr);
   grid-template-rows: repeat(5, 1fr);
   grid-auto-flow: column;
@@ -397,7 +397,7 @@ form {
   form {
     width: 40%;
   }
-  .sort-opts {
+  .pref-opts {
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(1, 1fr);
     grid-auto-flow: row;
@@ -442,7 +442,7 @@ form {
   form {
     width: 20%;
   }
-  .sort-opts {
+  .pref-opts {
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(1, 1fr);
     grid-auto-flow: row;
@@ -459,7 +459,7 @@ form {
   {
     max-height: 20vh;
   }
-  .sort-opts {
+  .pref-opts {
     grid-template-columns: repeat(10, 1fr);
     grid-template-rows: repeat(1, 1fr);
     grid-auto-flow: row;
@@ -541,7 +541,7 @@ form {
 }
 
 .header a,
-.sort-opts a,
+.pref-opts a,
 .sub-title a {
   color: var(--text-color);
 }
@@ -671,6 +671,7 @@ button {
 input[type="text"],
 input[type="password"],
 input[type="email"],
+input[type="checkbox"],
 textarea {
   width: 100%;
   padding: 10px;
@@ -679,6 +680,16 @@ textarea {
   border: 1px solid var(--bg-color-muted);
   border-radius: 4px;
   background-color: var(--bg-color-muted);
+  color: var(--text-color);
+}
+
+input[type="checkbox"] {
+  width: initial;
+}
+
+.preference label {
+  margin: 0;
+  margin-left: 5px;
   color: var(--text-color);
 }
 

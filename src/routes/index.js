@@ -80,11 +80,13 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 		limit: 50,
 	};
 	response = await G.getSubmissionComments(id, params);
+	const prefs = get_user_prefs(req.user.id);
 	res.render("comments", {
 		data: unescape_submission(response),
 		user: req.user,
 		from: req.query.from,
 		query: req.query,
+		prefs,
 	});
 });
 
@@ -100,12 +102,14 @@ router.get(
 			limit: 50,
 		};
 		response = await G.getSingleCommentThread(parent_id, child_id, params);
+		const prefs = get_user_prefs(req.user.id);
 		const comments = response.comments;
 		comments.forEach(unescape_comment);
 		res.render("single_comment_thread", {
 			comments,
 			parent_id,
 			user: req.user,
+			prefs,
 		});
 	},
 );
@@ -400,14 +404,24 @@ router.post("/set-pref", authenticateToken, async (req, res) => {
 			`)
 			.run({ user_id: user.id, value: value });
 			break;
+
+		case 'collapseAutoMod':
+			db.query(`
+				UPDATE users
+				SET collapseAutoModPref = $value
+				WHERE id = $user_id
+			`)
+			.run({ user_id: user.id, value: value });
+			break;
 	}
+	res.status(200).send("Updated successfully");
 });
 
 module.exports = router;
 
 function get_user_prefs(user_id) {
 	const prefs = db.query(`
-		SELECT sortPref, viewPref
+		SELECT sortPref, viewPref, collapseAutoModPref
 		FROM users
 		WHERE id = $user_id
 	`)
@@ -415,6 +429,7 @@ function get_user_prefs(user_id) {
 	.map((pref) => ({
 		sort: pref.sortPref,
 		view: pref.viewPref,
+		collapseAutoMod: pref.collapseAutoModPref,
 	}));
 	
 	return prefs[0];

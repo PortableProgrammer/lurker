@@ -48,7 +48,7 @@ mixin comment(com, isfirst, parent_id, next_id, prev_id)
         | #{data.count} more #{fmttxt(data.count, 'comment')}
   else
     div(class=`comment ${isfirst ? 'first' : ''} ${data.stickied ? 'sticky' : ''}`)
-      details(id=`${data.id}` open="")
+      details(id=`${data.id}` open=((data.author == 'AutoModerator' && prefs.collapseAutoMod == 0) || data.author != 'AutoModerator'))
         summary.expand-comments
           +infoContainer(data, next_id, prev_id)
         div.comment-body
