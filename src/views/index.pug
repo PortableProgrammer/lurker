@@ -1,7 +1,6 @@
 include ../mixins/post
 include ../mixins/header
 include ../mixins/head
-include ../mixins/prefUtils
 include ../utils
   - var viewQuery = query && query.view ? query.view : 'compact'
   - var sortQuery = query && query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot'
@@ -9,6 +8,7 @@ doctype html
 html
   +head("home")
   include ../mixins/subUtils
+  include ../mixins/prefUtils
 
   body
     main#content
