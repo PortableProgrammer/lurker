@@ -85,6 +85,8 @@ a:visited {
   flex-direction: row;
   justify-content: center;
   position: sticky;
+  /* Fix for iOS Safari 18.x */
+  z-index: 1;
   top: 0;
   background-color: var(--bg-color);
 }
