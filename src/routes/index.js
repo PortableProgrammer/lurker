@@ -2,6 +2,7 @@ const express = require("express");
 const he = require("he");
 const jwt = require("jsonwebtoken");
 const geddit = require("../geddit.js");
+const extlinks = require("../extlinks.js");
 const { JWT_KEY } = require("../");
 const { db } = require("../db");
 const { authenticateToken, authenticateAdmin } = require("../auth");
@@ -10,6 +11,7 @@ const url = require("url");
 
 const router = express.Router();
 const G = new geddit.Geddit();
+const E = extlinks.ExtLinks;
 
 // GET /
 router.get("/", authenticateToken, async (req, res) => {
@@ -56,8 +58,20 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 
 	const [posts, about] = await Promise.all([postsReq, aboutReq]);
 
+
 	if (query.view == 'card' && posts && posts.posts) {
 		posts.posts.forEach(unescape_selftext);
+
+		var extPromises = [];
+		for (const post of posts.posts) {
+			extPromises.push(E.resolveExternalLinks(post.data));
+		}
+		const extResults = await Promise.all(extPromises);
+		extResults.map((extData, i) => {
+			if (extData) {
+				E.updatePost(posts.posts[i].data, extData);
+			}
+		});
 	}
 
 	res.render("index", {
@@ -81,6 +95,12 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 	};
 	response = await G.getSubmissionComments(id, params);
 	const prefs = get_user_prefs(req.user.id);
+
+	const extData = await E.resolveExternalLinks(response.submission.data);
+	if (extData) {
+		E.updatePost(response.submission.data, extData);
+	}
+
 	res.render("comments", {
 		data: unescape_submission(response),
 		user: req.user,
@@ -169,6 +189,17 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 
 		if (req.query.view == 'card' && items) {
 			items.forEach(unescape_selftext);
+
+			var extPromises = [];
+			for (const post of items) {
+				extPromises.push(E.resolveExternalLinks(post.data));
+			}
+			const extResults = await Promise.all(extPromises);
+			extResults.map((extData, i) => {
+				if (extData) {
+					E.updatePost(items[i].data, extData);
+				}
+			});
 		}
 	
 		res.render("post-search", {

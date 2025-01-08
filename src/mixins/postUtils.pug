@@ -59,8 +59,14 @@
     const matches = html.matchAll(expression);
     var result = html;
     matches.forEach((match) => {
-      // Replace each occurrence with an actual img tag
-      result = result.replace(match[0], '<a href="' + match[1] + '"><img class="inline" src="' + match[1] + '"></a>');
+      // Imgur gifv is just an MP4 video with no sound
+      if (match[1].match(/(?:gifv|mp4)/i)) {
+        // Replace each occurrence with a video tag
+        result = result.replace(match[0], '<video controls muted data-dashjs-player preload="metadata" poster="' + match[1] + '"><source src="' + match[1] + '"></video>');
+      } else {
+        // Replace each occurrence with an actual img tag
+        result = result.replace(match[0], '<a href="' + match[1] + '"><img class="inline" src="' + match[1] + '"></a>');
+      }
     })
 
     return result;
