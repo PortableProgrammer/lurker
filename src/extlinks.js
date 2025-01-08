@@ -31,6 +31,7 @@ class ExtLinks {
                 const expression = /(?:gifv|mp4)/i;
                 if (url.match(expression)) {
                     // Probably a gif / video
+                    returnData.secure_media = { reddit_video: {} };
                     returnData.secure_media.reddit_video.fallback_url = 
                         returnData.secure_media.reddit_video.dash_url = 
                         returnData.secure_media.reddit_video.hls_url = 
