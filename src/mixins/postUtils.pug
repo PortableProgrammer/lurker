@@ -43,7 +43,7 @@
     if (p.gallery_data && p.gallery_data.items) {
       return p.gallery_data.items.map((item, idx) => ({
         id: item.media_id,
-        url: `https://i.redd.it/${item.media_id}.${imgExt(p, item.media_id)}`,
+        url: p.domain == "reddit.com" ? `https://i.redd.it/${item.media_id}.${imgExt(p, item.media_id)}` : item.media_id,
         total: p.gallery_data.items.length,
         idx: idx+1,
       }));

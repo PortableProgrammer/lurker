@@ -58,13 +58,17 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 
 	const [posts, about] = await Promise.all([postsReq, aboutReq]);
 
-
 	if (query.view == 'card' && posts && posts.posts) {
 		posts.posts.forEach(unescape_selftext);
+		posts.posts.forEach(unescape_media_embed);
 
 		var extPromises = [];
 		for (const post of posts.posts) {
-			extPromises.push(E.resolveExternalLinks(post.data));
+			if (post.data.post_hint == 'link') {
+				extPromises.push(E.resolveExternalLinks(post.data));
+			} else {
+				extPromises.push(null);
+			}
 		}
 		const extResults = await Promise.all(extPromises);
 		extResults.map((extData, i) => {
@@ -497,5 +501,16 @@ function unescape_comment(comment) {
 				comment.data.replies.data.children.forEach(unescape_comment);
 			}
 		}
+	}
+}
+
+function unescape_media_embed(post) {
+	// If called after getSubmissions
+	if (post.data && post.data.secure_media_embed && post.data.secure_media_embed.content) {
+		post.data.secure_media_embed.content = he.decode(post.data.secure_media_embed.content);
+	}
+	// If called after getSubmissionComments
+	if (post.secure_media_embed && post.secure_media_embed.content) {
+		post.secure_media_embed.content = he.decode(post.secure_media_embed.content);
 	}
 }
