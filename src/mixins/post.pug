@@ -4,8 +4,8 @@ mixin post(p, currentUrl)
   - var from = encodeURIComponent(currentUrl)
   - var viewQuery = query && query.view ? query.view : 'compact'
   - var sortQuery = query && query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot'
-  article(class=`post ${p.num_crossposts > 0 ? "crosspost" : ""}`)
-    div.post-container(class=`${query.view} ${p.stickied?"sticky":""} ${p.num_crossposts > 0 ? "crosspost" : ""}`)
+  article(class=`post ${p.is_crosspost ? "crosspost" : ""}`)
+    div.post-container(class=`${query.view} ${p.stickied?"sticky":""} ${p.is_crosspost ? "crosspost" : ""}`)
       div.post-text(class=`${query.view}`)
         div.title-container(class=`${query.view}`)
           a.post-title(href=`/comments/${p.id}?from=${from}&sort=${sortQuery}&view=${viewQuery}`)
@@ -35,7 +35,7 @@ mixin post(p, currentUrl)
                   != p.over_18 ? 'nsfw' : 'spoiler'
             div.self-text(class='card')
               != convertInlineImageLinks(p.selftext_html)
-      div.media-preview(class=`${query.view} ${p.num_crossposts > 0 ? "crosspost" : ""}`)
+      div.media-preview(class=`${query.view} ${p.is_crosspost ? "crosspost" : ""}`)
         - var onclick = query.view != "card" ? `toggleDetails('${p.id}')` : ``
         if query.view == "card" && (p.spoiler || p.over_18) && (isPostGallery(p) || isPostImage(p) || isPostVideo(p))
           div.spoiler(id=`spoiler_${p.id}`, onclick=`javascript:document.getElementById('spoiler_${p.id}').style.display = 'none';`) 
@@ -77,6 +77,7 @@ mixin post(p, currentUrl)
               | #{p.domain} 
             | ↗
         else if isCrosspost(p) && query.view == 'card'
+          - p.crosspost_parent_list[0].is_crosspost = true;
           +post(p.crosspost_parent_list[0], currentUrl)
 
     if query.view == "compact" && (isPostGallery(p) || isPostImage(p) || isPostVideo(p))
