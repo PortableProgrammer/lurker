@@ -29,6 +29,10 @@
     return (p.post_hint == "link");
   }
 -
+  function isCrosspost(p) {
+    return (p.crosspost_parent && p.crosspost_parent_list && p.crosspost_parent_list.length > 0);
+  }
+-
   function imgExt(p, id) {
     var metadata = p.media_metadata;
     if (metadata[id].status == 'valid') {

@@ -163,10 +163,19 @@ nav {
   font-size: 0.9rem;
 }
 
+.post.crosspost {
+  width: 97%;
+  margin: auto;
+}
+
 .post-container.card {
   border: 1px solid var(--bg-color-muted);
   border-radius: 8px;
   display: block;
+}
+
+.post-container.card.crosspost {
+  background-color: var(--bg-color-muted);
 }
 
 .post-text.card {
@@ -349,8 +358,19 @@ summary::before {
   overflow: hidden;
 }
 
+.post-title {
+  padding-left: unset!important;
+  margin: unset!important;
+}
+
 .post-author {
   display: none
+}
+
+.post-info {
+  font-size: 0.8rem!important;
+  margin: unset!important;
+  padding-left: unset!important;
 }
 
 .post-media {
@@ -371,6 +391,10 @@ form {
   .post, .comments-container, .hero, .header, .footer {
     flex: 1 1 90%;
     width: 90%;
+  }
+  .post:only-child {
+    flex: unset;
+    width: unset;
   }
   .media-preview img,
   .media-preview video 
@@ -412,6 +436,10 @@ form {
   .post, .comments-container, .hero, .header, .footer {
     flex: 1 1 60%;
     width: 60%;
+  }
+  .post:only-child {
+    flex: unset;
+    width: unset;
   }
   .media-preview img,
   .media-preview video 
@@ -458,7 +486,11 @@ form {
     flex: 1 1 40%;
     width: 40%;
   }
-  .media-preview.card img,
+  .post:only-child {
+    flex: unset;
+    width: unset;
+  }
+.media-preview.card img,
   .media-preview.card video
   {
     max-height: 20vh;
