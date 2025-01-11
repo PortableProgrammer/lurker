@@ -357,7 +357,7 @@ summary::before {
   display: none
 }
 
-.post-info {
+.post-info-link {
   font-size: 0.8rem!important;
   margin: unset!important;
   padding-left: unset!important;
