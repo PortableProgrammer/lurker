@@ -378,6 +378,11 @@ form {
 }
 
 @media (min-width: 768px) {
+  :root {
+    --border-radius-card: 2vmin;
+    --border-radius-media: 1vmin;
+    --border-radius-preview: 0.5vmin;  
+  }
   .post, .comments-container, .hero, .header, .footer {
     flex: 1 1 90%;
     width: 90%;
@@ -423,6 +428,10 @@ form {
 }
 
 @media (min-width: 1080px) {
+  :root {
+    --border-radius-card: 1vmin;
+    --border-radius-media: 1vmin;
+  }
   .post, .comments-container, .hero, .header, .footer {
     flex: 1 1 60%;
     width: 60%;
@@ -472,6 +481,10 @@ form {
 }
 
 @media (min-width: 2560px) {
+  :root {
+    --border-radius-card: 0.75vmin;
+    --border-radius-media: 0.75vmin;
+  }
   .post, .comments-container, .hero, .header, .footer {
     flex: 1 1 40%;
     width: 40%;
