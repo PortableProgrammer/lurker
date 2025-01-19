@@ -33,4 +33,8 @@
 
 	// Uncomment to connect as an existing user other than the container default. More info: https://aka.ms/dev-containers-non-root.
 	// "remoteUser": "devcontainer"
+
+	// Manually forward a port to this container
+	// docker inspect <container_name> | jq '.[0].NetworkSettings.IPAddress'
+	// docker run --rm -p 8080:1234 verb/socat TCP-LISTEN:1234,fork TCP-CONNECT:<container_ip>:3000
 }
