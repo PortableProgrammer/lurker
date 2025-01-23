@@ -82,18 +82,13 @@
   }
 -
   function decodePostVideoUrls(p) {
-    // Video URLs have querystring separators that are HTML-encoded, so replace them.
-    const expression = /&amp;/g;
-
-    var hls_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.hls_url ? p.secure_media.reddit_video.hls_url.replace(expression, '&') : '';
-
-    var dash_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.dash_url ? p.secure_media.reddit_video.dash_url.replace(expression, '&') : '';
-
-    var fallback_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.fallback_url ? p.secure_media.reddit_video.fallback_url.replace(expression, '&') : '';
-
-    var scrubber_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.scrubber_media_url ? p.secure_media.reddit_video.scrubber_media_url.replace(expression, '&') : '';
-
-    var poster_url = p.preview && p.preview.images ? p.preview.images[0].source.url.replace(expression, '&') : '';
+    // Video and poster URLs can be HTML-encoded, so decode them.
+    const he = require_he;
+    var hls_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.hls_url ? he.decode(p.secure_media.reddit_video.hls_url) : '';
+    var dash_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.dash_url ? he.decode(p.secure_media.reddit_video.dash_url) : '';
+    var fallback_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.fallback_url ? he.decode(p.secure_media.reddit_video.fallback_url) : '';
+    var scrubber_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.scrubber_media_url ? he.decode(p.secure_media.reddit_video.scrubber_media_url) : '';
+    var poster_url = p.preview && p.preview.images && p.preview.images.length > 0 ? he.decode(p.preview.images[0].source.url) : '';
 
     return [hls_url, dash_url, fallback_url, scrubber_url, poster_url];
   }

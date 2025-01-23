@@ -78,6 +78,10 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 		});
 	}
 
+	res.locals = {
+		require_he: require("he"),
+	};
+
 	res.render("index", {
 		subreddit,
 		posts,
@@ -105,6 +109,10 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 		E.updatePost(response.submission.data, extData);
 	}
 
+	res.locals = {
+		require_he: require("he"),
+	};
+
 	res.render("comments", {
 		data: unescape_submission(response),
 		user: req.user,
@@ -129,6 +137,11 @@ router.get(
 		const prefs = get_user_prefs(req.user.id);
 		const comments = response.comments;
 		comments.forEach(unescape_comment);
+
+		res.locals = {
+			require_he: require("he"),
+		};
+
 		res.render("single_comment_thread", {
 			comments,
 			parent_id,
@@ -205,6 +218,10 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 				}
 			});
 		}
+	
+		res.locals = {
+			require_he: require("he"),
+		};
 	
 		res.render("post-search", {
 			items,
