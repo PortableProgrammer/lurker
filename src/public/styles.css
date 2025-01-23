@@ -323,10 +323,11 @@ summary::before {
 
 .media-preview a,
 .image-viewer a {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   text-decoration: none;
   padding: unset;
   margin: 1rem;
+  margin-left: unset;
 }
 
 .media-maximized {
@@ -405,6 +406,7 @@ form {
   .image-viewer a {
     font-size: 1rem;
     margin: 0.7rem;
+    margin-left: unset;
     padding: initial;
   }
   .post-text.card {
@@ -461,6 +463,7 @@ form {
   .image-viewer a {
     font-size: 1rem;
     margin: 1rem;
+    margin-left: unset;
     padding: initial;
   }
   .self-text.card {

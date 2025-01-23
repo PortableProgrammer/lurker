@@ -30,7 +30,7 @@
   }
 -
   function isPostLink(p) {
-    return (p.post_hint == "link" || !p.post_hint);
+    return (p.post_hint == "link" || (!p.post_hint && !p.domain.startsWith("self.")));
   }
 -
   function isCrosspost(p) {
