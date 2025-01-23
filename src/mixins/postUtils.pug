@@ -26,11 +26,11 @@
   }
 -
   function isPostVideo(p) {
-    return (p.post_hint == "hosted:video");
+    return (p.post_hint == "hosted:video" || p.is_video);
   }
 -
   function isPostLink(p) {
-    return (p.post_hint == "link");
+    return (p.post_hint == "link" || !p.post_hint);
   }
 -
   function isCrosspost(p) {

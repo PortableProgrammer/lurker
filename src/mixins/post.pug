@@ -59,7 +59,10 @@ mixin post(p, currentUrl)
             div.spoiler(id=`spoiler_${p.id}`, onclick=`javascript:document.getElementById('spoiler_${p.id}').style.display = 'none';`) 
               h2
                 != p.over_18 ? 'nsfw' : 'spoiler'
-          if isPostGallery(p)
+          if isCrosspost(p)
+            - p.crosspost_parent_list[0].is_crosspost = true;
+            +post(p.crosspost_parent_list[0], currentUrl)
+          else if isPostGallery(p)
             div.gallery
               each item in postGalleryItems(p)
                 div.gallery-item

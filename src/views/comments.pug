@@ -1,6 +1,7 @@
 include ../mixins/comment
 include ../mixins/header
 include ../mixins/head
+include ../mixins/post
 include ../mixins/postUtils
 include ../utils
 
@@ -48,7 +49,10 @@ html
           != post.title
 
         div.image-viewer.main-content
-          if isPostGallery(post)
+          if isCrosspost(post)
+            - post.crosspost_parent_list[0].is_crosspost = true;
+            +post(post.crosspost_parent_list[0], from)
+          else if isPostGallery(post)
             div.gallery
               each item in postGalleryItems(post)
                 div.gallery-item
