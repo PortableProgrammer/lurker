@@ -498,13 +498,15 @@ function unescape_submission(response) {
 }
 
 function unescape_selftext(post) {
-	// If called after getSubmissions
-	if (post.data && post.data.selftext_html) {
-		post.data.selftext_html = he.decode(post.data.selftext_html);
+	// getSubmissions: post.data
+	// getSubmissionComments: post
+	const temp_post = post.data || post;
+	if (temp_post.selftext_html) {
+		temp_post.selftext_html = he.decode(temp_post.selftext_html);
 	}
-	// If called after getSubmissionComments
-	if (post.selftext_html) {
-		post.selftext_html = he.decode(post.selftext_html);
+	// If this is a crosspost, recurse through the parents as well
+	if (temp_post.crosspost_parent && temp_post.crosspost_parent_list && temp_post.crosspost_parent_list.length > 0) {
+		temp_post.crosspost_parent_list.forEach(unescape_selftext);
 	}
 }
 
