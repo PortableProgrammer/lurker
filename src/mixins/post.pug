@@ -11,7 +11,8 @@ mixin post(p, currentUrl)
           div.title-container(class=`${query.view}`)
             a.post-title(class=`${query.view}`, href=`/comments/${p.id}?from=${from}&sort=${sortQuery}&view=${viewQuery}`)
               != p.title
-            span.domain   (#{p.domain})
+            if p.domain
+              span.domain   (#{p.domain})
           div.info-container 
             p
               | #{fmtnum(p.ups)} ↑ 

@@ -33,14 +33,13 @@ html
           a(href=`/r/${post.subreddit}?${sortQuery}&${viewQuery}`) r/#{post.subreddit}
 
         div.info-container 
-          - var domain = (new URL(post.url)).hostname
           p
             | #{fmtnum(post.ups)} ↑ 
             | &nbsp;·&nbsp; by u/#{post.author} 
             | &nbsp;·&nbsp; 
             | #{timeDifference(Date.now(), post.created * 1000)}
             | &nbsp;·&nbsp; 
-            if domain !== 'www.reddit.com'
+            if post.domain !== 'www.reddit.com'
               a(href=`${post.url}`) submission url ↗
               | &nbsp;·&nbsp; 
             a(href=`https://reddit.com${post.permalink}`) reddit ↗
