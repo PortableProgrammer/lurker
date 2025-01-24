@@ -11,6 +11,19 @@ html
     main#content
       +header(user)
       div.hero
+        div(style="display: flex;")
+          h1(style="margin: 0;") multireddits
+          div#button-container
+            a.button(href=`/multi-create?sort=${sortQuery}&view=${viewQuery}`) create
+        p
+          each m in multis 
+            - var multireddit = m.multireddit
+            div.sub-title
+              h4
+                a(href=`/m/${multireddit}?sort=${sortQuery}&view=${viewQuery}`) 
+                  | m/#{multireddit}
+              div#button-container
+                a.button(href=`/multi-edit/${multireddit}?sort=${sortQuery}&view=${viewQuery}`) edit
         h1 subscriptions
         p
           each s in subs 

@@ -705,12 +705,23 @@ a {
   color: var(--gilded);
 }
 
-button {
+button,
+.button {
   border: 0px solid;
   border-radius: 2px;
   background-color: var(--bg-color-muted);
   color: var(--text-color);
   padding: 5px;
+}
+
+a.button {
+  text-decoration: none;
+  cursor: default;
+  font-size: 0.7rem;
+}
+
+a.button:visited {
+  color: var(--text-color);
 }
 
 input[type="text"],

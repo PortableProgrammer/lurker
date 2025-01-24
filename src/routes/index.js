@@ -32,7 +32,8 @@ router.get("/", authenticateToken, async (req, res) => {
 // GET /r/:id
 router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	const subreddit = req.params.subreddit;
-	const isMulti = subreddit.includes("+");
+	const multireddit = req.query.lurker_multi;
+	const isMulti = subreddit.includes("+") || multireddit;
 	const query = req.query ? req.query : {};
 
 	const prefs = get_user_prefs(req.user.id);
@@ -84,6 +85,7 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 
 	res.render("index", {
 		subreddit,
+		multireddit,
 		posts,
 		about,
 		query,
@@ -92,6 +94,31 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 		isSubbed,
 		currentUrl: req.url,
 	});
+});
+
+// GET /m/:id
+router.get("/m/:multireddit", authenticateToken, async(req, res) => {
+	var multireddit = req.params.multireddit;
+
+	const multi_sub = db
+		.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
+		.all({ id: req.user.id, multireddit: multireddit });
+
+	const subs = multi_sub
+		.map((s) => s.subreddit).join("+");
+
+	if (multi_sub.length > 0) {
+		multireddit = multi_sub[0].multireddit;
+
+		req.query.lurker_multi = multireddit;
+		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+
+		res.redirect(`/r/${subs}${qs}`);
+	}
+	else {
+		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		res.redirect(`/${qs}`);
+	}
 });
 
 // GET /comments/:id
@@ -159,7 +186,82 @@ router.get("/subs", authenticateToken, async (req, res) => {
 		)
 		.all({ id: req.user.id });
 
-	res.render("subs", { subs, user: req.user, query: req.query });
+	const multis = db
+		.query(
+			"SELECT DISTINCT multireddit FROM multireddits WHERE user_id = $id ORDER by LOWER(multireddit)",
+		)
+		.all({ id: req.user.id });
+
+	res.render("subs", { 
+		subs,
+		multis,
+		user: req.user,
+		query: req.query,
+	});
+});
+
+// GET /multi-create
+router.get("/multi-create", authenticateToken, async (req, res) => {
+	const multireddit = req.query.m;
+	var items, after, message, multi_exists;
+	if (multireddit) {
+		multi_exists = db
+			.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
+			.get({ id: req.user.id, multireddit: multireddit }) !== null;
+	}
+	
+	// If this multi already exists, or at least a name has been entered, redirect to multi-edit instead
+	if (multi_exists || req.query.q) {
+		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		res.redirect(`/multi-edit/${multireddit}${qs}`);
+	}
+	else {
+		res.render("multireddit", { 
+			mode: 'create',
+			user: req.user,
+			multireddit: multireddit,
+			original_query: req.query.q,
+			query: req.query,
+			items,
+			message,
+		});
+	}
+});
+
+// GET /multi-edit
+router.get("/multi-edit/:multireddit", authenticateToken, async (req, res) => {
+	var multireddit = req.params.multireddit;
+	const query = req.query || {};
+
+	const multi_sub = db
+		.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
+		.all({ id: req.user.id, multireddit: multireddit });
+
+	if (multi_sub && multi_sub.length > 0) {
+		multireddit = multi_sub[0].multireddit;
+	}
+
+	var items, after, message;
+
+	if (req.query && req.query.q) {
+		var { items, after } = await G.searchSubreddits(req.query.q);
+		message =
+			items.length === 0
+				? "no results found"
+				: `showing ${items.length} results`;
+	}
+
+	res.render("multireddit", {
+		mode: 'edit',
+		multireddit,
+		subs: multi_sub,
+		query,
+		original_query: req.query.q,
+		user: req.user,
+		message,
+		items,
+	});
+
 });
 
 // GET /search
@@ -467,6 +569,36 @@ router.post("/set-pref", authenticateToken, async (req, res) => {
 			break;
 	}
 	res.status(200).send("Updated successfully");
+});
+
+// POST /multi-add
+router.post("/multi-add", authenticateToken, async (req, res) => {
+	const { multireddit, subreddit } = req.body;
+	const user = req.user;
+
+	db.query(`
+		INSERT INTO multireddits (user_id, multireddit, subreddit)
+		VALUES ($user_id, $multireddit, $subreddit)
+	`)
+	.run({ user_id: user.id, multireddit: multireddit, subreddit: subreddit });
+
+	res.status(200).send("Added successfully");
+});
+
+// POST /multi-remove
+router.post("/multi-remove", authenticateToken, async (req, res) => {
+	const { multireddit, subreddit } = req.body;
+	const user = req.user;
+
+	db.query(`
+		DELETE FROM multireddits
+		WHERE user_id = $user_id
+			AND multireddit = $multireddit
+			AND subreddit = $subreddit
+	`)
+	.run({ user_id: user.id, multireddit: multireddit, subreddit: subreddit });
+
+	res.status(200).send("Removed successfully");
 });
 
 module.exports = router;

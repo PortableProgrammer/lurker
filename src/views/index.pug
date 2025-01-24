@@ -16,8 +16,11 @@ html
       div.hero
         div.sub-title
           h1 
-            if isMulti
-              a(href=`/?sort=${sortQuery}&view=${viewQuery}`) lurker
+            if isMulti 
+              - var multititle = multireddit ? `m/${multireddit}` : `lurker`
+              - var multilink = multireddit ? `/${multititle}` : `/`
+              a(href=`${multilink}?sort=${sortQuery}&view=${viewQuery}`)
+                | #{multititle}
             else
               a(href=`/r/${subreddit}?sort=${sortQuery}&view=${viewQuery}`)
                 | r/#{subreddit}
@@ -27,6 +30,9 @@ html
                 button(onclick=`toggleSub('${subreddit}')` id=`thinger_${subreddit}`) unsubscribe
               else
                 button(onclick=`toggleSub('${subreddit}')` id=`thinger_${subreddit}`) subscribe
+          else if multireddit
+            div#button-container
+              a.button(href=`/multi-edit/${multireddit}?sort=${sortQuery}&view=${viewQuery}`) edit
         if about && !isMulti
           div.about #{about.public_description}
         //-else 

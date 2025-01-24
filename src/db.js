@@ -34,6 +34,18 @@ db.run(`
   )
 `);
 
+// multi table
+db.run(`
+  CREATE TABLE IF NOT EXISTS multireddits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    multireddit TEXT,
+    subreddit TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    UNIQUE(user_id, multireddit, subreddit)
+  )
+`);
+
 db.run(`
   CREATE TABLE IF NOT EXISTS invites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

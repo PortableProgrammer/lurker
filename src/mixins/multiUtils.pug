@@ -1,0 +1,41 @@
+-
+script(defer).
+  async function toggleSub(multi, sub) {
+    let thinger = document.getElementById(`thinger_${sub}`);
+    if (thinger.innerText === 'remove') {
+      await doThing(multi, sub, 'multi-remove');
+    } else {
+      await doThing(multi, sub, 'multi-add');
+    }
+  }
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(";").shift();
+  }
+
+  async function doThing(multi, sub, thing) {
+    const jwtToken = getCookie("auth_token");
+    const response = await fetch(`/${thing}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${jwtToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ subreddit: sub, multireddit: multi }),
+    });
+
+    let thinger = document.getElementById(`thinger_${sub}`);
+    if (thing === 'multi-add') {
+      thinger.innerText = 'remove';
+    } else {
+      thinger.innerText = 'add';
+    }
+
+    if (!response.ok) {
+      console.error(response);
+      console.error(`Failed to do ${thing}`);
+    }
+  }
+
