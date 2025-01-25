@@ -26,11 +26,15 @@
   }
 -
   function isPostVideo(p) {
-    return (p.post_hint == "hosted:video");
+    return (p.post_hint == "hosted:video" || p.is_video);
   }
 -
   function isPostLink(p) {
-    return (p.post_hint == "link");
+    return (p.post_hint == "link" || (!p.post_hint && !p.domain.startsWith("self.")));
+  }
+-
+  function isCrosspost(p) {
+    return (p.crosspost_parent && p.crosspost_parent_list && p.crosspost_parent_list.length > 0);
   }
 -
   function imgExt(p, id) {
@@ -47,7 +51,7 @@
     if (p.gallery_data && p.gallery_data.items) {
       return p.gallery_data.items.map((item, idx) => ({
         id: item.media_id,
-        url: `https://i.redd.it/${item.media_id}.${imgExt(p, item.media_id)}`,
+        url: p.domain == "reddit.com" ? `https://i.redd.it/${item.media_id}.${imgExt(p, item.media_id)}` : item.media_id,
         total: p.gallery_data.items.length,
         idx: idx+1,
       }));
@@ -57,32 +61,34 @@
   }
 -
   function convertInlineImageLinks(html) {
-    // Find all anchors that href to preview.redd.it, i.redd.it, i.imgur.com
+    // Find all anchors that href to preview.redd.it, i/v.redd.it, i.imgur.com
     // and contain just a link to the same href
-    const expression = /<a href="(http[s]?:\/\/(?:preview\.redd\.it|i\.redd\.it|i\.imgur\.com).*?)">\1?<\/a>/g;
+    const expression = /<a href="(http[s]?:\/\/(?:preview\.redd\.it|[iv]\.redd\.it|i\.imgur\.com).*?)">\1?<\/a>/g;
     const matches = Array.from(html.matchAll(expression));
     var result = html;
     matches.forEach((match) => {
-      // Replace each occurrence with an actual img tag
-      result = result.replace(match[0], '<a href="' + match[1] + '"><img class="inline" src="' + match[1] + '"></a>');
+      // Imgur gifv is just an MP4 video with no sound
+      // v.redd.it is a video
+      if (match[1].match(/(?:gifv|mp4|v\.reddi\.it)/i)) {
+        // Replace each occurrence with a video tag
+        result = result.replace(match[0], '<video controls muted data-dashjs-player preload="metadata" poster="' + match[1] + '"><source src="' + match[1] + '"></video>');
+      } else {
+        // Replace each occurrence with an actual img tag
+        result = result.replace(match[0], '<a href="' + match[1] + '"><img class="inline" src="' + match[1] + '"></a>');
+      }
     })
 
     return result;
   }
 -
   function decodePostVideoUrls(p) {
-    // Video URLs have querystring separators that are HTML-encoded, so replace them.
-    const expression = /&amp;/g;
-
-    var hls_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.hls_url ? p.secure_media.reddit_video.hls_url.replace(expression, '&') : '';
-
-    var dash_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.dash_url ? p.secure_media.reddit_video.dash_url.replace(expression, '&') : '';
-
-    var fallback_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.fallback_url ? p.secure_media.reddit_video.fallback_url.replace(expression, '&') : '';
-
-    var scrubber_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.scrubber_media_url ? p.secure_media.reddit_video.scrubber_media_url.replace(expression, '&') : '';
-
-    var poster_url = p.preview && p.preview.images ? p.preview.images[0].source.url.replace(expression, '&') : '';
+    // Video and poster URLs can be HTML-encoded, so decode them.
+    const he = require_he;
+    var hls_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.hls_url ? he.decode(p.secure_media.reddit_video.hls_url) : '';
+    var dash_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.dash_url ? he.decode(p.secure_media.reddit_video.dash_url) : '';
+    var fallback_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.fallback_url ? he.decode(p.secure_media.reddit_video.fallback_url) : '';
+    var scrubber_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.scrubber_media_url ? he.decode(p.secure_media.reddit_video.scrubber_media_url) : '';
+    var poster_url = p.preview && p.preview.images && p.preview.images.length > 0 ? he.decode(p.preview.images[0].source.url) : '';
 
     return [hls_url, dash_url, fallback_url, scrubber_url, poster_url];
   }

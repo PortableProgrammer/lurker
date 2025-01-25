@@ -2,6 +2,7 @@ const express = require("express");
 const he = require("he");
 const jwt = require("jsonwebtoken");
 const geddit = require("../geddit.js");
+const extlinks = require("../extlinks.js");
 const { JWT_KEY } = require("../");
 const { db } = require("../db");
 const { authenticateToken, authenticateAdmin } = require("../auth");
@@ -10,6 +11,7 @@ const url = require("url");
 
 const router = express.Router();
 const G = new geddit.Geddit();
+const E = extlinks.ExtLinks;
 
 // GET /
 router.get("/", authenticateToken, async (req, res) => {
@@ -30,13 +32,17 @@ router.get("/", authenticateToken, async (req, res) => {
 // GET /r/:id
 router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	const subreddit = req.params.subreddit;
-	const isMulti = subreddit.includes("+");
+	const multireddit = req.query.lurker_multi;
+	const isMulti = subreddit.includes("+") || multireddit;
 	const query = req.query ? req.query : {};
+
+	const prefs = get_user_prefs(req.user.id);
+
 	if (!query.sort) {
-		query.sort = "hot";
+		query.sort = prefs.sort;
 	}
 	if (!query.view) {
-		query.view = "compact";
+		query.view = prefs.view;
 	}
 
 	let isSubbed = false;
@@ -55,10 +61,31 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 
 	if (query.view == 'card' && posts && posts.posts) {
 		posts.posts.forEach(unescape_selftext);
+		posts.posts.forEach(unescape_media_embed);
+
+		var extPromises = [];
+		for (const post of posts.posts) {
+			if (post.data.post_hint == 'link') {
+				extPromises.push(E.resolveExternalLinks(post.data));
+			} else {
+				extPromises.push(null);
+			}
+		}
+		const extResults = await Promise.all(extPromises);
+		extResults.map((extData, i) => {
+			if (extData) {
+				E.updatePost(posts.posts[i].data, extData);
+			}
+		});
 	}
+
+	res.locals = {
+		require_he: require("he"),
+	};
 
 	res.render("index", {
 		subreddit,
+		multireddit,
 		posts,
 		about,
 		query,
@@ -69,6 +96,31 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	});
 });
 
+// GET /m/:id
+router.get("/m/:multireddit", authenticateToken, async(req, res) => {
+	var multireddit = req.params.multireddit;
+
+	const multi_sub = db
+		.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
+		.all({ id: req.user.id, multireddit: multireddit });
+
+	const subs = multi_sub
+		.map((s) => s.subreddit).join("+");
+
+	if (multi_sub.length > 0) {
+		multireddit = multi_sub[0].multireddit;
+
+		req.query.lurker_multi = multireddit;
+		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+
+		res.redirect(`/r/${subs}${qs}`);
+	}
+	else {
+		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		res.redirect(`/${qs}`);
+	}
+});
+
 // GET /comments/:id
 router.get("/comments/:id", authenticateToken, async (req, res) => {
 	const id = req.params.id;
@@ -77,11 +129,23 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 		limit: 50,
 	};
 	response = await G.getSubmissionComments(id, params);
+	const prefs = get_user_prefs(req.user.id);
+
+	const extData = await E.resolveExternalLinks(response.submission.data);
+	if (extData) {
+		E.updatePost(response.submission.data, extData);
+	}
+
+	res.locals = {
+		require_he: require("he"),
+	};
+
 	res.render("comments", {
 		data: unescape_submission(response),
 		user: req.user,
 		from: req.query.from,
 		query: req.query,
+		prefs,
 	});
 });
 
@@ -97,12 +161,19 @@ router.get(
 			limit: 50,
 		};
 		response = await G.getSingleCommentThread(parent_id, child_id, params);
+		const prefs = get_user_prefs(req.user.id);
 		const comments = response.comments;
 		comments.forEach(unescape_comment);
+
+		res.locals = {
+			require_he: require("he"),
+		};
+
 		res.render("single_comment_thread", {
 			comments,
 			parent_id,
 			user: req.user,
+			prefs,
 		});
 	},
 );
@@ -115,7 +186,82 @@ router.get("/subs", authenticateToken, async (req, res) => {
 		)
 		.all({ id: req.user.id });
 
-	res.render("subs", { subs, user: req.user, query: req.query });
+	const multis = db
+		.query(
+			"SELECT DISTINCT multireddit FROM multireddits WHERE user_id = $id ORDER by LOWER(multireddit)",
+		)
+		.all({ id: req.user.id });
+
+	res.render("subs", { 
+		subs,
+		multis,
+		user: req.user,
+		query: req.query,
+	});
+});
+
+// GET /multi-create
+router.get("/multi-create", authenticateToken, async (req, res) => {
+	const multireddit = req.query.m;
+	var items, after, message, multi_exists;
+	if (multireddit) {
+		multi_exists = db
+			.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
+			.get({ id: req.user.id, multireddit: multireddit }) !== null;
+	}
+	
+	// If this multi already exists, or at least a name has been entered, redirect to multi-edit instead
+	if (multi_exists || req.query.q) {
+		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		res.redirect(`/multi-edit/${multireddit}${qs}`);
+	}
+	else {
+		res.render("multireddit", { 
+			mode: 'create',
+			user: req.user,
+			multireddit: multireddit,
+			original_query: req.query.q,
+			query: req.query,
+			items,
+			message,
+		});
+	}
+});
+
+// GET /multi-edit
+router.get("/multi-edit/:multireddit", authenticateToken, async (req, res) => {
+	var multireddit = req.params.multireddit;
+	const query = req.query || {};
+
+	const multi_sub = db
+		.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
+		.all({ id: req.user.id, multireddit: multireddit });
+
+	if (multi_sub && multi_sub.length > 0) {
+		multireddit = multi_sub[0].multireddit;
+	}
+
+	var items, after, message;
+
+	if (req.query && req.query.q) {
+		var { items, after } = await G.searchSubreddits(req.query.q);
+		message =
+			items.length === 0
+				? "no results found"
+				: `showing ${items.length} results`;
+	}
+
+	res.render("multireddit", {
+		mode: 'edit',
+		multireddit,
+		subs: multi_sub,
+		query,
+		original_query: req.query.q,
+		user: req.user,
+		message,
+		items,
+	});
+
 });
 
 // GET /search
@@ -162,7 +308,22 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 
 		if (req.query.view == 'card' && items) {
 			items.forEach(unescape_selftext);
+
+			var extPromises = [];
+			for (const post of items) {
+				extPromises.push(E.resolveExternalLinks(post.data));
+			}
+			const extResults = await Promise.all(extPromises);
+			extResults.map((extData, i) => {
+				if (extData) {
+					E.updatePost(items[i].data, extData);
+				}
+			});
 		}
+	
+		res.locals = {
+			require_he: require("he"),
+		};
 	
 		res.render("post-search", {
 			items,
@@ -194,7 +355,10 @@ router.get("/dashboard", authenticateToken, async (req, res) => {
 				usedAt: Date.parse(inv.usedAt),
 			}));
 	}
-	res.render("dashboard", { invites, isAdmin, user: req.user, query: req.query });
+
+	const prefs = get_user_prefs(req.user.id);
+
+	res.render("dashboard", { invites, isAdmin, user: req.user, query: req.query, prefs });
 });
 
 router.get("/create-invite", authenticateAdmin, async (req, res) => {
@@ -371,7 +535,89 @@ router.post("/unsubscribe", authenticateToken, async (req, res) => {
 	}
 });
 
+// POST /set-pref
+router.post("/set-pref", authenticateToken, async (req, res) => {
+	const { preference, value} = req.body;
+	const user = req.user;
+	
+	switch(preference) {
+		case 'sort':
+			db.query(`
+				UPDATE users
+				SET sortPref = $value
+				WHERE id = $user_id
+			`)
+			.run({ user_id: user.id, value: value });
+			break;
+
+		case 'view':
+			db.query(`
+				UPDATE users
+				SET viewPref = $value
+				WHERE id = $user_id
+			`)
+			.run({ user_id: user.id, value: value });
+			break;
+
+		case 'collapseAutoMod':
+			db.query(`
+				UPDATE users
+				SET collapseAutoModPref = $value
+				WHERE id = $user_id
+			`)
+			.run({ user_id: user.id, value: value });
+			break;
+	}
+	res.status(200).send("Updated successfully");
+});
+
+// POST /multi-add
+router.post("/multi-add", authenticateToken, async (req, res) => {
+	const { multireddit, subreddit } = req.body;
+	const user = req.user;
+
+	db.query(`
+		INSERT INTO multireddits (user_id, multireddit, subreddit)
+		VALUES ($user_id, $multireddit, $subreddit)
+	`)
+	.run({ user_id: user.id, multireddit: multireddit, subreddit: subreddit });
+
+	res.status(200).send("Added successfully");
+});
+
+// POST /multi-remove
+router.post("/multi-remove", authenticateToken, async (req, res) => {
+	const { multireddit, subreddit } = req.body;
+	const user = req.user;
+
+	db.query(`
+		DELETE FROM multireddits
+		WHERE user_id = $user_id
+			AND multireddit = $multireddit
+			AND subreddit = $subreddit
+	`)
+	.run({ user_id: user.id, multireddit: multireddit, subreddit: subreddit });
+
+	res.status(200).send("Removed successfully");
+});
+
 module.exports = router;
+
+function get_user_prefs(user_id) {
+	const prefs = db.query(`
+		SELECT sortPref, viewPref, collapseAutoModPref
+		FROM users
+		WHERE id = $user_id
+	`)
+	.all({ user_id: user_id })
+	.map((pref) => ({
+		sort: pref.sortPref,
+		view: pref.viewPref,
+		collapseAutoMod: pref.collapseAutoModPref,
+	}));
+	
+	return prefs[0];
+}
 
 function unescape_submission(response) {
 	const post = response.submission.data;
@@ -384,13 +630,15 @@ function unescape_submission(response) {
 }
 
 function unescape_selftext(post) {
-	// If called after getSubmissions
-	if (post.data && post.data.selftext_html) {
-		post.data.selftext_html = he.decode(post.data.selftext_html);
+	// getSubmissions: post.data
+	// getSubmissionComments: post
+	const temp_post = post.data || post;
+	if (temp_post.selftext_html) {
+		temp_post.selftext_html = he.decode(temp_post.selftext_html);
 	}
-	// If called after getSubmissionComments
-	if (post.selftext_html) {
-		post.selftext_html = he.decode(post.selftext_html);
+	// If this is a crosspost, recurse through the parents as well
+	if (temp_post.crosspost_parent && temp_post.crosspost_parent_list && temp_post.crosspost_parent_list.length > 0) {
+		temp_post.crosspost_parent_list.forEach(unescape_selftext);
 	}
 }
 
@@ -404,5 +652,16 @@ function unescape_comment(comment) {
 				comment.data.replies.data.children.forEach(unescape_comment);
 			}
 		}
+	}
+}
+
+function unescape_media_embed(post) {
+	// If called after getSubmissions
+	if (post.data && post.data.secure_media_embed && post.data.secure_media_embed.content) {
+		post.data.secure_media_embed.content = he.decode(post.data.secure_media_embed.content);
+	}
+	// If called after getSubmissionComments
+	if (post.secure_media_embed && post.secure_media_embed.content) {
+		post.secure_media_embed.content = he.decode(post.secure_media_embed.content);
 	}
 }

@@ -1,6 +1,7 @@
 include ../mixins/comment
 include ../mixins/header
 include ../mixins/head
+include ../mixins/post
 include ../mixins/postUtils
 include ../utils
 
@@ -32,14 +33,13 @@ html
           a(href=`/r/${post.subreddit}?${sortQuery}&${viewQuery}`) r/#{post.subreddit}
 
         div.info-container 
-          - var domain = (new URL(post.url)).hostname
           p
             | #{fmtnum(post.ups)} ↑ 
             | &nbsp;·&nbsp; by u/#{post.author} 
             | &nbsp;·&nbsp; 
             | #{timeDifference(Date.now(), post.created * 1000)}
             | &nbsp;·&nbsp; 
-            if domain !== 'www.reddit.com'
+            if post.domain !== 'www.reddit.com'
               a(href=`${post.url}`) submission url ↗
               | &nbsp;·&nbsp; 
             a(href=`https://reddit.com${post.permalink}`) reddit ↗
@@ -48,7 +48,10 @@ html
           != post.title
 
         div.image-viewer.main-content
-          if isPostGallery(post)
+          if isCrosspost(post)
+            - post.crosspost_parent_list[0].is_crosspost = true;
+            +post(post.crosspost_parent_list[0], from)
+          else if isPostGallery(post)
             div.gallery
               each item in postGalleryItems(post)
                 div.gallery-item
@@ -64,7 +67,7 @@ html
             video(controls data-dashjs-player src=`${url}`).post-media
           else if isPostLink(post)
             a(href=post.url)
-              | #{post.url}
+              | #{post.domain} ↗
 
         if post.selftext_html
           div.self-text

@@ -34,6 +34,18 @@ db.run(`
   )
 `);
 
+// multi table
+db.run(`
+  CREATE TABLE IF NOT EXISTS multireddits (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    multireddit TEXT,
+    subreddit TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    UNIQUE(user_id, multireddit, subreddit)
+  )
+`);
+
 db.run(`
   CREATE TABLE IF NOT EXISTS invites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,6 +74,28 @@ runMigration("add-isAdmin-column", () => {
     UPDATE users
     SET isAdmin = 1
     WHERE id = (SELECT MIN(id) FROM users)
+  `).run();
+});
+
+runMigration("add-sort-view-pref-columns", () => {
+  // Add sortPref column
+  db.query(`
+    ALTER TABLE users 
+    ADD COLUMN sortPref TEXT DEFAULT 'hot'
+  `).run();
+
+  // Add viewPref column
+  db.query(`
+    ALTER TABLE users 
+    ADD COLUMN viewPref TEXT DEFAULT 'compact'
+  `).run();
+});
+
+// Add Collapse AutoMod pref
+runMigration("add-collapse-automod-pref-column", () => {
+  db.query(`
+    ALTER TABLE users
+    ADD COLUMN collapseAutoModPref BOOLEAN DEFAULT 0
   `).run();
 });
 

@@ -5,6 +5,8 @@ include ../utils
 doctype html
 html
   +head("dashboard")
+  include ../mixins/prefUtils
+
   body
     main#content
       +header(user)
@@ -14,6 +16,44 @@ html
         if message 
           div.dashboard-error-message
             | #{message}
+
+        if prefs
+          h2 preferences
+
+          details.preference
+            summary sort: #{prefs.sort}
+            div.pref-opts
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'best')` id=`pref_sort_best`) best
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'new')` id=`pref_sort_new`) new
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'rising')` id=`pref_sort_rising`) rising
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top')` id=`pref_sort_top`) top
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=day')` id=`pref_sort_top_day`) top day
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=week')` id=`pref_sort_top_week`) top week
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=month')` id=`pref_sort_top_month`) top month
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=year')` id=`pref_sort_top_year`) top year
+              div
+                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
+
+          details.preference
+            summary view: #{prefs.view}
+            div.pref-opts
+              div
+                a(href=`/dashboard` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
+              div
+                a(href=`/dashboard` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
+          div.preference
+            input(type="checkbox" id="pref_collapseAutoMod" checked=prefs.collapseAutoMod!==0 onclick=`togglePref('collapseAutoMod')`)
+            label(for="pref_collapseAutoMod") Collapse AutoMod Comments
 
         if isAdmin
           h2 invites
@@ -38,7 +78,3 @@ html
                     a(href=`/delete-invite/${invite.id}`) delete
 
           a(href="/create-invite") create invite
-
-        else
-          p you aren't an admin and therefore there is nothing to see here yet
- 

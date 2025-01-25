@@ -1,0 +1,60 @@
+include ../mixins/header
+include ../mixins/head
+
+- var viewQuery = query && query.view ? query.view : 'compact'
+- var sortQuery = query && query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot'
+doctype html
+html
+  +head(`${mode} multireddit ${multireddit || ''}`)
+  include ../mixins/multiUtils
+  body
+    main#content
+      +header(user)
+      div.hero
+        h1 #{mode} multireddit
+        case mode
+          when 'edit'
+            div.sub-title
+              h2 
+                a(href=`/m/${multireddit}?sort=${sortQuery}&view=${viewQuery}`) m/#{multireddit}
+            p
+              each s in subs 
+                - var subreddit = s.subreddit
+                div.sub-title
+                  h4
+                    a(href=`/r/${subreddit}?sort=${sortQuery}&view=${viewQuery}`) 
+                      | r/#{subreddit}
+                  div#button-container
+                    button(onclick=`toggleSub('${multireddit}', '${subreddit}')` id=`thinger_${subreddit}`) remove
+
+        if mode == 'create'
+          h2 name your multireddit
+          input(form="multi-form" type="text" name="m" placeholder="type in a multireddit name..." value=query.m required).search-input
+        h2 add subreddits to #{mode == 'edit' ? multireddit : `your multireddit`}
+        - var prefill = original_query ?? "";
+        - var formAction = `${mode == 'edit' ? '/' : '?m='}${multireddit}`
+        form(id="multi-form" action=`/multi-${mode}${formAction}` method="get").search-bar
+          input(type="text" name="q" placeholder="type in a subreddit search..." value=prefill required).search-input
+          input(type="hidden" name="sort" value=sortQuery)
+          input(type="hidden" name="view" value=viewQuery)
+          button(type="submit").search-button search
+
+        if message
+          div.search-message
+            i #{message}
+        if items
+          div.search-results
+            each i in items
+              div.search-result
+                - var subreddit = i.data.display_name
+                - var isSubbed = subs && subs.map((s) => s.subreddit.toLowerCase()).includes(subreddit.toLowerCase())
+                if !isSubbed
+                  div.sub-title
+                    h4
+                      a(href=`/r/${subreddit}?sort=${sortQuery}&view=${viewQuery}`) 
+                        | r/#{subreddit}
+                    div#button-container
+                      button(onclick=`toggleSub('${multireddit}', '${subreddit}')` id=`thinger_${subreddit}`) add
+
+                  if i.data.public_description
+                    p(style="margin-left: 1rem;") #{i.data.public_description}
