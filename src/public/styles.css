@@ -134,6 +134,10 @@ a:visited {
   grid-auto-flow: column;
 }
 
+.view-opts {
+  grid-template-rows: repeat(2, 1fr);
+}
+
 .footer {
   display: flex;
   flex-direction: row;
@@ -873,7 +877,7 @@ select {
 
 .sticky {
   background-color: var(--sticky-color);
-  border-radius: 2px;
+  border-radius: var(--border-radius-card);
   border: 4px solid var(--sticky-color);
 }
 
