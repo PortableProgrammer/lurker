@@ -1,5 +1,15 @@
 :root {
-  /* Light mode colors */
+  /* Messages */
+  --msg-success: #1a7f37;
+  --msg-success-muted: #4ac26b66;
+  --msg-info: #0969da;
+  --msg-info-muted: #54aeff66;
+  --msg-warn: #9a6700;
+  --msg-warn-muted: #d4a72c66;
+  --msg-danger: #cf222e;
+  --msg-danger-muted: #ff818266;
+
+  /* Light Mode */
   --bg-color: white;
   --bg-color-muted: #eee;
   --text-color: black;
@@ -22,6 +32,17 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Messages */
+    --msg-success: #238636;
+    --msg-success-muted: #2ea04366;
+    --msg-info: #1f6feb;
+    --msg-info-muted: #388bfd66;
+    --msg-warn: #9e6a03;
+    --msg-warn-muted: #bb800966;
+    --msg-danger: #da3633;
+    --msg-danger-muted: #f8514966;
+
+    /* Dark Mode */
     --bg-color: black;
     --bg-color-muted: #333;
     --text-color: white;
@@ -121,6 +142,15 @@ a:visited {
 
 .preference {
   margin-top: 20px;
+}
+
+.preference:first-child {
+  margin-top: unset;
+}
+
+.preference-group {
+  margin: 0.5rem 0rem 0.5rem 1rem;
+  padding: 0.5rem;
 }
 
 .pref-opts {
@@ -750,7 +780,6 @@ input[type="checkbox"] {
 .preference label {
   margin: 0;
   margin-left: 5px;
-  color: var(--text-color);
 }
 
 form label {
@@ -883,4 +912,55 @@ select {
 
 .inline {
   max-width: 100%;
+}
+
+.message {
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  border-left: 0.25em solid var(--bg-color-muted);
+}
+
+.message > p:first-of-type {
+  margin-top: unset;
+}
+
+.message:last-of-type {
+  margin-bottom: 8px;
+}
+
+.message.success {
+  border-left-color: var(--msg-success);
+}
+
+.message.info {
+  border-left-color: var(--msg-info);
+}
+
+.message.warning {
+  border-left-color: var(--msg-warn);
+}
+
+.message.danger {
+  border-left-color: var(--msg-danger);
+}
+
+.message-title {
+  font-weight: bold;
+  color: var(--text-color-muted);
+}
+
+.message.success > .message-title {
+  color: var(--msg-success);
+}
+
+.message.info > .message-title {
+  color: var(--msg-info);
+}
+
+.message.warning > .message-title {
+  color: var(--msg-warn);
+}
+
+.message.danger > .message-title {
+  color: var(--msg-danger);
 }

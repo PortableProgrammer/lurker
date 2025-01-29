@@ -21,7 +21,7 @@ html
           h2 preferences
 
           details.preference
-            summary sort: #{prefs.sort}
+            summary Sort: #{prefs.sort}
             div.pref-opts
               div
                 a(href=`/dashboard` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
@@ -45,15 +45,37 @@ html
                 a(href=`/dashboard` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
 
           details.preference
-            summary view: #{prefs.view}
-            div.pref-opts
-              div
-                a(href=`/dashboard` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
+            summary View: #{prefs.view}
+            div.pref-opts.view-opts
               div
                 a(href=`/dashboard` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
+              div
+                a(href=`/dashboard` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
           div.preference
             input(type="checkbox" id="pref_collapseAutoMod" checked=prefs.collapseAutoMod!==0 onclick=`togglePref('collapseAutoMod')`)
-            label(for="pref_collapseAutoMod") Collapse AutoMod Comments
+            label(for="pref_collapseAutoMod") Collapse Automod Comments
+            div.message
+                p Automaticaly collapses comments made by &nbsp;
+                  code u/AutoModerator
+                  | . 
+
+          details.preference
+            summary(style="color: var(--msg-warn);") Experimental - Proceed with caution
+            div.preference-group
+              div.preference
+                input(type="checkbox" id="pref_trackSessions" checked=prefs.trackSessions!==0 onclick=`togglePref('trackSessions')`)
+                label(for="pref_trackSessions") Track Session Views
+                div.message.warning
+                  p.message-title Warning
+                  p May increase page load times significantly after extended usage
+                div.message
+                  p Limits duplicate posts by storing post ids already seen during the session, removing them from the feed on subsequent pages, and loading enough new posts to make up the difference. A session is started when you first click &nbsp;
+                    code next ⟶
+                    | &nbsp; while browsing, and ends when you navigate to 
+                    code /home
+                    | ,  
+                    code /all
+                    | , or another subreddit, multireddit, etc.
 
         if isAdmin
           h2 invites

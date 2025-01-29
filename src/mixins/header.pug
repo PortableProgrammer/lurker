@@ -1,5 +1,5 @@
 mixin header(user)
-  - var viewQuery = 'view=' + (prefs ? prefs.view : (query && query.view ? query.view : 'compact'))
+  - var viewQuery = 'view=' + (prefs ? prefs.view : (query && query.view ? query.view : 'card'))
   - var sortQuery = 'sort=' + (prefs ? prefs.sort : (query ? (query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot') : 'hot'))
   div.header
     div.header-item
@@ -12,7 +12,7 @@ mixin header(user)
       a(href=`/subs?${viewQuery}`) subs
     if user
       div.header-item
-        a(href=`/dashboard${viewQuery}`) #{user.username}
+        a(href=`/dashboard?${viewQuery}`) #{user.username}
         |&nbsp;
         a(href='/logout') (logout)
     else

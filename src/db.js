@@ -55,6 +55,27 @@ db.run(`
   )
 `);
 
+// sessions table
+db.run(`
+  CREATE TABLE IF NOT EXISTS sessions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    subreddit TEXT,
+    query TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    UNIQUE(user_id, query)
+  )
+`);
+
+// views table
+db.run(`
+  CREATE TABLE IF NOT EXISTS views (
+    session_id INTEGER,
+    post_id TEXT,
+    FOREIGN KEY(session_id) REFERENCES sessions(id)
+  )
+`);
+
 // migrations table
 db.query(`
   CREATE TABLE IF NOT EXISTS migrations (
@@ -87,7 +108,7 @@ runMigration("add-sort-view-pref-columns", () => {
   // Add viewPref column
   db.query(`
     ALTER TABLE users 
-    ADD COLUMN viewPref TEXT DEFAULT 'compact'
+    ADD COLUMN viewPref TEXT DEFAULT 'card'
   `).run();
 });
 
@@ -96,6 +117,35 @@ runMigration("add-collapse-automod-pref-column", () => {
   db.query(`
     ALTER TABLE users
     ADD COLUMN collapseAutoModPref BOOLEAN DEFAULT 0
+  `).run();
+});
+
+// Add Track Sessions pref
+runMigration("add-track-sessions-pref-column", () => {
+  db.query(`
+    ALTER TABLE users
+    ADD COLUMN pref_trackSessions BOOLEAN DEFAULT 0
+  `).run();
+});
+
+// Standardize pref columns
+runMigration("standardize-pref-columns", () => {
+  // viewPref -> pref_view
+  db.query(`
+    ALTER TABLE users
+    RENAME COLUMN viewPref TO pref_view
+  `).run();
+
+  // sortPref -> pref_sort
+  db.query(`
+    ALTER TABLE users
+    RENAME COLUMN sortPref TO pref_sort
+  `).run();
+
+  // collapseAutoModPref -> pref_collapseAutomod
+  db.query(`
+    ALTER TABLE users
+    RENAME COLUMN collapseAutoModPref TO pref_collapseAutomod
   `).run();
 });
 
