@@ -59,6 +59,110 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 
 	const [posts, about] = await Promise.all([postsReq, aboutReq]);
 
+	if (posts && prefs.trackSessions) {
+		// Reuse or create a new session
+		let session = 
+			db.query(`
+				SELECT id, query 
+				FROM sessions 
+				WHERE user_id = $user_id AND subreddit = $subreddit
+			`).get({ user_id: req.user.id, subreddit: subreddit});
+		if (!session || !req.query.after) {
+			// Limit sessions to one-per-user
+
+			// Remove prior session(s)
+			session = 
+				db.query(`
+					DELETE FROM sessions
+					WHERE user_id = $user_id
+					RETURNING id
+				`).all({ user_id: req.user.id });
+
+			// Remove prior view(s)
+			session.forEach((session) => {
+				db.query(`
+					DELETE FROM views
+					WHERE session_id = $session_id
+				`).run({ session_id: session.id });
+			});
+
+			// Create a new session for this subreddit and query
+			session = 
+				db.query(`
+					INSERT INTO sessions (user_id, subreddit, query)
+					VALUES ($user_id, $subreddit, $query)
+					RETURNING id, query
+				`).get({ user_id: req.user.id, subreddit: subreddit, query: posts.after });
+		}
+
+		// If we're on a different page,
+		if (session.query != req.query.after) {
+			// Get the views for this session
+			let views = 
+				db.query(`
+					SELECT post_id FROM views WHERE session_id = $session_id
+				`).all({ session_id: session.id });
+
+			// Remove any previously-seen posts from this session
+			let removedPosts = 0;
+			let postsToRemove = new Set(views.map(view => view.post_id)).intersection(new Set(posts.posts.map(post => post.data.id)));
+			
+			for (const id of postsToRemove) {
+				let index = posts.posts.findIndex((post) => post.data.id == id);
+				if (index >= 0) {
+					posts.posts.splice(index, 1);
+					removedPosts++;
+				}
+			}
+
+			// Get `removedPosts` more posts
+			while (removedPosts > 0) {
+				const postsReq = G.getSubmissions(query.sort, `${subreddit}`, { ...query, after: posts.after, limit: removedPosts });
+				const [extraPosts] = await Promise.all([postsReq]);
+
+				// If we fail to retrieve any more posts, give up entirely and render the view
+				if (!extraPosts) {
+					break;
+				}
+
+				// Remove any previously-seen posts from this session (including those we just pulled for this view)
+				let postsToRemove = new Set(views.map(view => view.post_id)).union(new Set(posts.posts.map(post => post.data.id))).intersection(new Set(extraPosts.posts.map(post => post.data.id)));
+
+				for (const id of postsToRemove) {
+					let index = extraPosts.posts.findIndex((post) => post.data.id == id);
+					if (index >= 0) {
+						extraPosts.posts.splice(index, 1);
+					}
+				}
+
+				// Pop these onto the end of the new posts
+				for (const post of extraPosts.posts) {
+					posts.posts.push(post);
+				}
+
+				// Update the `after` value
+				posts.after = extraPosts.after;
+				// Decrement counter
+				removedPosts -= extraPosts.posts.length;
+			}
+
+			// Update the session
+			db.query(`
+				UPDATE sessions
+				SET query = $query
+				WHERE id = $session_id
+			`).run({ session_id: session.id, query: req.query.after });
+
+			// Insert the resulting set of views
+			posts.posts.forEach((post) => {
+				db.query(`
+					INSERT INTO views (session_id, post_id)
+					VALUES ($session_id, $post_id)
+				`).run({ session_id: session.id, post_id: post.data.id });
+			});
+		}
+	}
+
 	if (query.view == 'card' && posts && posts.posts) {
 		posts.posts.forEach(unescape_selftext);
 		posts.posts.forEach(unescape_media_embed);
@@ -539,36 +643,20 @@ router.post("/unsubscribe", authenticateToken, async (req, res) => {
 router.post("/set-pref", authenticateToken, async (req, res) => {
 	const { preference, value} = req.body;
 	const user = req.user;
+	const validPrefs = ['sort', 'view', 'collapseAutoMod', 'trackSessions']
 	
-	switch(preference) {
-		case 'sort':
-			db.query(`
-				UPDATE users
-				SET sortPref = $value
-				WHERE id = $user_id
-			`)
-			.run({ user_id: user.id, value: value });
-			break;
-
-		case 'view':
-			db.query(`
-				UPDATE users
-				SET viewPref = $value
-				WHERE id = $user_id
-			`)
-			.run({ user_id: user.id, value: value });
-			break;
-
-		case 'collapseAutoMod':
-			db.query(`
-				UPDATE users
-				SET collapseAutoModPref = $value
-				WHERE id = $user_id
-			`)
-			.run({ user_id: user.id, value: value });
-			break;
+	if (validPrefs.includes(preference)) {
+		var query = `
+			UPDATE users
+			SET pref_${preference} = $value
+			WHERE id = $user_id
+		`;
+		db.query(query).run({ user_id: user.id, value: value });
+		res.status(200).send("Updated successfully");
 	}
-	res.status(200).send("Updated successfully");
+	else {
+		res.status(400).send("Invalid preference");
+	}
 });
 
 // POST /multi-add
@@ -605,15 +693,16 @@ module.exports = router;
 
 function get_user_prefs(user_id) {
 	const prefs = db.query(`
-		SELECT sortPref, viewPref, collapseAutoModPref
+		SELECT pref_sort, pref_view, pref_collapseAutoMod, pref_trackSessions
 		FROM users
 		WHERE id = $user_id
 	`)
 	.all({ user_id: user_id })
 	.map((pref) => ({
-		sort: pref.sortPref,
-		view: pref.viewPref,
-		collapseAutoMod: pref.collapseAutoModPref,
+		sort: pref.pref_sort,
+		view: pref.pref_view,
+		collapseAutoMod: pref.pref_collapseAutoMod,
+		trackSessions: pref.pref_trackSessions,
 	}));
 	
 	return prefs[0];

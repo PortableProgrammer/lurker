@@ -70,11 +70,11 @@ html
               a(href=`/r/${subreddit}?sort=top&t=year&view=${viewQuery}` onclick=`setPref('sort', 'top&t=year')` id=`pref_sort_top_year`) top year
             div
               a(href=`/r/${subreddit}?sort=top&t=all&view=${viewQuery}` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
-          div.pref-opts
-            div
-              a(href=`/r/${subreddit}?sort=${sortQuery}&view=compact` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
+          div.pref-opts.view-opts
             div
               a(href=`/r/${subreddit}?sort=${sortQuery}&view=card` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
+            div
+              a(href=`/r/${subreddit}?sort=${sortQuery}&view=compact` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
 
       if posts
         each child in posts.posts
