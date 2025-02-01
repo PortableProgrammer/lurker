@@ -80,8 +80,17 @@ html
         each child in posts.posts
           +post(child.data, currentUrl)
 
-        if posts.after
+        if perfEvents || posts.after
           div.footer
-            div.footer-item
-              - var newQuery = {...query, after: posts.after}
-              a(href=`/r/${subreddit}?${encodeQueryParams(newQuery)}`) next ⟶
+            if perfEvents
+              div.footer-item
+                details(style="color: var(--text-color-muted); font-size: smaller;")
+                  summary
+                    | #{perfEvents[perfEvents.length - 1].description} | #{formatTime(perfEvents[perfEvents.length - 1].elapsed, 2)}
+                  div
+                    each event in perfEvents
+                      p #{event.description} | #{formatTime(event.elapsed, 2)}
+            if posts.after
+              div.footer-item
+                - var newQuery = {...query, after: posts.after}
+                a(href=`/r/${subreddit}?${encodeQueryParams(newQuery)}`) next ⟶

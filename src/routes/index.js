@@ -36,7 +36,17 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	const isMulti = subreddit.includes("+") || multireddit;
 	const query = req.query ? req.query : {};
 
+	// Performance logging
+	const perfStartTime = performance.now();
+	var perfEventTime = performance.now();
+	const perfEvents = [];
+
+	perfEventTime = performance.now();
 	const prefs = get_user_prefs(req.user.id);
+	perfEvents.push({
+		description: 'Retrieved user prefs',
+		elapsed: performance.now() - perfEventTime,
+	});
 
 	if (!query.sort) {
 		query.sort = prefs.sort;
@@ -57,9 +67,16 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	const postsReq = G.getSubmissions(query.sort, `${subreddit}`, query);
 	const aboutReq = G.getSubreddit(`${subreddit}`);
 
+	perfEventTime = performance.now();
 	const [posts, about] = await Promise.all([postsReq, aboutReq]);
 
+	perfEvents.push({
+		description: `Retrieved page of ${posts.posts.length} posts`,
+		elapsed: performance.now() - perfEventTime,
+	});
+
 	if (posts && prefs.trackSessions) {
+		perfEventTime = performance.now();
 		// Reuse or create a new session
 		let session = 
 			db.query(`
@@ -67,9 +84,16 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 				FROM sessions 
 				WHERE user_id = $user_id AND subreddit = $subreddit
 			`).get({ user_id: req.user.id, subreddit: subreddit});
+
+		perfEvents.push({
+			description: 'Retrieved session',
+			elapsed: performance.now() - perfEventTime,
+		});
+
 		if (!session || !req.query.after) {
 			// Limit sessions to one-per-user
 
+			perfEventTime = performance.now();
 			// Remove prior session(s)
 			session = 
 				db.query(`
@@ -78,6 +102,12 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 					RETURNING id
 				`).all({ user_id: req.user.id });
 
+			perfEvents.push({
+				description: 'Changed page; reset session',
+				elapsed: performance.now() - perfEventTime,
+			});
+		
+			perfEventTime = performance.now();
 			// Remove prior view(s)
 			session.forEach((session) => {
 				db.query(`
@@ -86,6 +116,12 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 				`).run({ session_id: session.id });
 			});
 
+			perfEvents.push({
+				description: 'Reset views',
+				elapsed: performance.now() - perfEventTime,
+			});
+	
+			perfEventTime = performance.now();
 			// Create a new session for this subreddit and query
 			session = 
 				db.query(`
@@ -93,20 +129,38 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 					VALUES ($user_id, $subreddit, $query)
 					RETURNING id, query
 				`).get({ user_id: req.user.id, subreddit: subreddit, query: posts.after });
+
+			perfEvents.push({
+				description: 'Created new session',
+				elapsed: performance.now() - perfEventTime,
+			});
 		}
 
 		// If we're on a different page,
 		if (session.query != req.query.after) {
+			perfEventTime = performance.now();
 			// Get the views for this session
 			let views = 
 				db.query(`
 					SELECT post_id FROM views WHERE session_id = $session_id
 				`).all({ session_id: session.id });
 
+			perfEvents.push({
+				description: `Retrieved ${views.length} views from session`,
+				elapsed: performance.now() - perfEventTime,
+			});
+	
+			perfEventTime = performance.now();
 			// Remove any previously-seen posts from this session
 			let removedPosts = 0;
 			let postsToRemove = new Set(views.map(view => view.post_id)).intersection(new Set(posts.posts.map(post => post.data.id)));
-			
+
+			perfEvents.push({
+				description: `Got Set of ${postsToRemove.size || 0} duplicate posts to remove`,
+				elapsed: performance.now() - perfEventTime,
+			});
+				
+			perfEventTime = performance.now();
 			for (const id of postsToRemove) {
 				let index = posts.posts.findIndex((post) => post.data.id == id);
 				if (index >= 0) {
@@ -115,37 +169,86 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 				}
 			}
 
-			// Get `removedPosts` more posts
+			perfEvents.push({
+				description: `Removed ${removedPosts} duplicate posts`,
+				elapsed: performance.now() - perfEventTime,
+			});
+	
+			// Get another page of posts
+			var perfLoopCounter = 0;
+			var perfTotalRemoved = removedPosts;
+			const perfStartLoopTime = performance.now();
 			while (removedPosts > 0) {
-				const postsReq = G.getSubmissions(query.sort, `${subreddit}`, { ...query, after: posts.after, limit: removedPosts });
-				const [extraPosts] = await Promise.all([postsReq]);
+				perfLoopCounter++;
+				var perfLoopRemoved = 0;
 
+				perfEventTime = performance.now();
+				// Get up to double the number of removed posts
+				const postsReq = G.getSubmissions(query.sort, `${subreddit}`, { ...query, after: posts.after, limit: removedPosts * 2 });
+				const [extraPosts] = await Promise.all([postsReq]);
+			
 				// If we fail to retrieve any more posts, give up entirely and render the view
 				if (!extraPosts) {
 					break;
 				}
 
+				perfEvents.push({
+					description: `[Loop ${perfLoopCounter}] Retrieved extra posts`,
+					elapsed: performance.now() - perfEventTime,
+				});
+
+				perfEventTime = performance.now();
 				// Remove any previously-seen posts from this session (including those we just pulled for this view)
 				let postsToRemove = new Set(views.map(view => view.post_id)).union(new Set(posts.posts.map(post => post.data.id))).intersection(new Set(extraPosts.posts.map(post => post.data.id)));
 
+				perfEvents.push({
+					description: `[Loop ${perfLoopCounter}] Got Set of ${postsToRemove.size || 0} duplicate extra posts to remove`,
+					elapsed: performance.now() - perfEventTime,
+				});
+			
+				perfEventTime = performance.now();
 				for (const id of postsToRemove) {
 					let index = extraPosts.posts.findIndex((post) => post.data.id == id);
 					if (index >= 0) {
 						extraPosts.posts.splice(index, 1);
+						perfLoopRemoved++;
 					}
 				}
 
-				// Pop these onto the end of the new posts
+				perfEvents.push({
+					description: `[Loop ${perfLoopCounter}] Removed ${perfLoopRemoved} duplicate extra posts`,
+					elapsed: performance.now() - perfEventTime,
+				});
+			
+				perfEventTime = performance.now();
+				// Push these onto the end of the new posts, up to `removedPosts` times
 				for (const post of extraPosts.posts) {
-					posts.posts.push(post);
+					if (removedPosts > 0) {
+						posts.posts.push(post);
+						// Update the `after` value
+						posts.after = `${post.kind}_${post.data.id}`;
+						// Decrement counter
+						removedPosts--;
+					}
+					else {
+						break;
+					}
 				}
+				
+				perfEvents.push({
+					description:  `[Loop ${perfLoopCounter}] Pushed extra posts`,
+					elapsed: performance.now() - perfEventTime,
+				});
 
-				// Update the `after` value
-				posts.after = extraPosts.after;
-				// Decrement counter
-				removedPosts -= extraPosts.posts.length;
+				perfTotalRemoved += perfLoopRemoved;
 			}
 
+			perfEvents.push({
+				description: 'Finished ' + perfLoopCounter + ' loops',
+				elapsed: performance.now() - perfStartLoopTime,
+			});
+
+			perfEventTime = performance.now();
 			// Update the session
 			db.query(`
 				UPDATE sessions
@@ -153,6 +256,12 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 				WHERE id = $session_id
 			`).run({ session_id: session.id, query: req.query.after });
 
+			perfEvents.push({
+				description: 'Updated session',
+				elapsed: performance.now() - perfEventTime,
+			});
+
+			perfEventTime = performance.now();
 			// Insert the resulting set of views
 			posts.posts.forEach((post) => {
 				db.query(`
@@ -160,7 +269,17 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 					VALUES ($session_id, $post_id)
 				`).run({ session_id: session.id, post_id: post.data.id });
 			});
+
+			perfEvents.push({
+				description: 'Updated views',
+				elapsed: performance.now() - perfEventTime,
+			});
 		}
+
+		perfEvents.push({
+			description: `Replaced ${perfTotalRemoved || 0} duplicate posts`,
+			elapsed: performance.now() - perfStartTime,
+		});
 	}
 
 	if (query.view == 'card' && posts && posts.posts) {
@@ -197,6 +316,7 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 		user: req.user,
 		isSubbed,
 		currentUrl: req.url,
+		perfEvents,
 	});
 });
 
