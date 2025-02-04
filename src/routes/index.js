@@ -36,17 +36,7 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	const isMulti = subreddit.includes("+") || multireddit;
 	const query = req.query ? req.query : {};
 
-	// Performance logging
-	const perfStartTime = performance.now();
-	var perfEventTime = performance.now();
-	const perfEvents = [];
-
-	perfEventTime = performance.now();
 	const prefs = get_user_prefs(req.user.id);
-	perfEvents.push({
-		description: 'Retrieved user prefs',
-		elapsed: performance.now() - perfEventTime,
-	});
 
 	if (!query.sort) {
 		query.sort = prefs.sort;
@@ -67,15 +57,20 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 	const postsReq = G.getSubmissions(query.sort, `${subreddit}`, query);
 	const aboutReq = G.getSubreddit(`${subreddit}`);
 
-	perfEventTime = performance.now();
+	// Track Sessions Performance logging
+	const perfEvents = [];
+	const perfStartTime = performance.now();
+	var perfEventTime = performance.now();
+
 	const [posts, about] = await Promise.all([postsReq, aboutReq]);
 
-	perfEvents.push({
-		description: `Retrieved page of ${posts.posts.length} posts`,
-		elapsed: performance.now() - perfEventTime,
-	});
-
 	if (posts && prefs.trackSessions) {
+		// Capture the initial load event
+		perfEvents.push({
+			description: `Retrieved page of ${posts.posts.length} posts`,
+			elapsed: performance.now() - perfEventTime,
+		});
+
 		perfEventTime = performance.now();
 		// Reuse or create a new session
 		let session = 
@@ -86,41 +81,38 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 			`).get({ user_id: req.user.id, subreddit: subreddit});
 
 		perfEvents.push({
-			description: 'Retrieved session',
+			description: `${session ? 'Retrieved' : 'Could not find'} session`,
 			elapsed: performance.now() - perfEventTime,
 		});
 
+		// Create a new session if necessary
 		if (!session || !req.query.after) {
-			// Limit sessions to one-per-user
+			// Remove the old session and views
+			if (session) {
+				perfEventTime = performance.now();
+				/* Explicitly pass the session_id since it will have changed
+				 * by the time this is executed
+				 */
+				setTimeout((session_id) => {
+					// Remove prior views
+					db.query(`
+						DELETE FROM views
+						WHERE session_id = $session_id
+					`).run({ session_id: session_id });
 
-			perfEventTime = performance.now();
-			// Remove prior session(s)
-			session = 
-				db.query(`
-					DELETE FROM sessions
-					WHERE user_id = $user_id
-					RETURNING id
-				`).all({ user_id: req.user.id });
+					// Remove prior session
+					db.query(`
+						DELETE FROM sessions
+						WHERE id = $session_id
+					`).run({ session_id: session_id });
+				}, 0, session.id);
 
-			perfEvents.push({
-				description: 'Changed page; reset session',
-				elapsed: performance.now() - perfEventTime,
-			});
-		
-			perfEventTime = performance.now();
-			// Remove prior view(s)
-			session.forEach((session) => {
-				db.query(`
-					DELETE FROM views
-					WHERE session_id = $session_id
-				`).run({ session_id: session.id });
-			});
+				perfEvents.push({
+					description: 'Session outdated; sheduled delete of old session and views',
+					elapsed: performance.now() - perfEventTime,
+				});
+			}
 
-			perfEvents.push({
-				description: 'Reset views',
-				elapsed: performance.now() - perfEventTime,
-			});
-	
 			perfEventTime = performance.now();
 			// Create a new session for this subreddit and query
 			session = 
@@ -153,14 +145,16 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 			perfEventTime = performance.now();
 			// Remove any previously-seen posts from this session
 			let removedPosts = 0;
-			let postsToRemove = new Set(views.map(view => view.post_id)).intersection(new Set(posts.posts.map(post => post.data.id)));
+			let postsToRemove = new Set(views.map(view => view.post_id))
+				.intersection(new Set(posts.posts.map(post => post.data.id)));
 
 			perfEvents.push({
-				description: `Got Set of ${postsToRemove.size || 0} duplicate posts to remove`,
+				description: `Got Set of ${postsToRemove.size || 0} duplicate post${(postsToRemove.size || 0) != 1 ? 's' : ''} to remove`,
 				elapsed: performance.now() - perfEventTime,
 			});
 				
 			perfEventTime = performance.now();
+			
 			for (const id of postsToRemove) {
 				let index = posts.posts.findIndex((post) => post.data.id == id);
 				if (index >= 0) {
@@ -170,11 +164,11 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 			}
 
 			perfEvents.push({
-				description: `Removed ${removedPosts} duplicate posts`,
+				description: `Removed ${removedPosts} duplicate post${removedPosts != 1 ? 's' : ''}`,
 				elapsed: performance.now() - perfEventTime,
 			});
 	
-			// Get another page of posts
+			// Get more posts
 			var perfLoopCounter = 0;
 			var perfTotalRemoved = removedPosts;
 			const perfStartLoopTime = performance.now();
@@ -183,8 +177,11 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 				var perfLoopRemoved = 0;
 
 				perfEventTime = performance.now();
-				// Get up to double the number of removed posts
-				const postsReq = G.getSubmissions(query.sort, `${subreddit}`, { ...query, after: posts.after, limit: removedPosts * 2 });
+				// Get up to double the number of removed posts, depending on how many we need
+				let bufferFactor = (removedPosts > 10 ? 1.25 : removedPosts > 5 ? 1.5 : 2);
+				let bufferLimit = Math.round(removedPosts * bufferFactor);
+
+				const postsReq = G.getSubmissions(query.sort, `${subreddit}`, { ...query, after: posts.after, limit: bufferLimit });
 				const [extraPosts] = await Promise.all([postsReq]);
 			
 				// If we fail to retrieve any more posts, give up entirely and render the view
@@ -193,13 +190,15 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 				}
 
 				perfEvents.push({
-					description: `[Loop ${perfLoopCounter}] Retrieved extra posts`,
+					description: `[Loop ${perfLoopCounter}] Retrieved ${extraPosts.posts.length} extra post${extraPosts.posts.length != 1 ? 's' : ''}`,
 					elapsed: performance.now() - perfEventTime,
 				});
 
 				perfEventTime = performance.now();
 				// Remove any previously-seen posts from this session (including those we just pulled for this view)
-				let postsToRemove = new Set(views.map(view => view.post_id)).union(new Set(posts.posts.map(post => post.data.id))).intersection(new Set(extraPosts.posts.map(post => post.data.id)));
+				let postsToRemove = new Set(views.map(view => view.post_id))
+					.union(new Set(posts.posts.map(post => post.data.id)))
+					.intersection(new Set(extraPosts.posts.map(post => post.data.id)));
 
 				perfEvents.push({
 					description: `[Loop ${perfLoopCounter}] Got Set of ${postsToRemove.size || 0} duplicate extra posts to remove`,
@@ -222,13 +221,16 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 			
 				perfEventTime = performance.now();
 				// Push these onto the end of the new posts, up to `removedPosts` times
+				var c = 0;
 				for (const post of extraPosts.posts) {
 					if (removedPosts > 0) {
 						posts.posts.push(post);
 						// Update the `after` value
 						posts.after = `${post.kind}_${post.data.id}`;
-						// Decrement counter
+						// Decrement removedPosts counter
 						removedPosts--;
+						// Increment counter
+						c++;
 					}
 					else {
 						break;
@@ -236,48 +238,51 @@ router.get("/r/:subreddit", authenticateToken, async (req, res) => {
 				}
 				
 				perfEvents.push({
-					description:  `[Loop ${perfLoopCounter}] Pushed extra posts`,
+					description:  `[Loop ${perfLoopCounter}] Pushed ${c} extra post${c != 1 ? 's' : ''}, need ${removedPosts} more post${removedPosts != 1 ? 's' : ''}`,
 					elapsed: performance.now() - perfEventTime,
 				});
 
 				perfTotalRemoved += perfLoopRemoved;
 			}
 
-			perfEvents.push({
-				description: 'Finished ' + perfLoopCounter + ' loops',
-				elapsed: performance.now() - perfStartLoopTime,
-			});
+			if (perfLoopCounter > 0) {
+				perfEvents.push({
+					description: `Finished ${perfLoopCounter} loop${perfLoopCounter != 1 ? 's': ''}`,
+					elapsed: performance.now() - perfStartLoopTime,
+				});
+			}
 
 			perfEventTime = performance.now();
-			// Update the session
-			db.query(`
-				UPDATE sessions
-				SET query = $query
-				WHERE id = $session_id
-			`).run({ session_id: session.id, query: req.query.after });
-
-			perfEvents.push({
-				description: 'Updated session',
-				elapsed: performance.now() - perfEventTime,
-			});
-
-			perfEventTime = performance.now();
-			// Insert the resulting set of views
-			posts.posts.forEach((post) => {
+			// Update the session and insert the resulting set of views asynchronously
+			setTimeout(() => {
 				db.query(`
-					INSERT INTO views (session_id, post_id)
-					VALUES ($session_id, $post_id)
-				`).run({ session_id: session.id, post_id: post.data.id });
+					UPDATE sessions
+					SET query = $query
+					WHERE id = $session_id
+				`).run({ session_id: session.id, query: req.query.after });
+
+				// Build the INSERT
+				var q = 'INSERT INTO views (session_id, post_id) VALUES ';
+				var p = {
+					session_id: session.id,
+				};
+				var i = 0;
+				posts.posts.forEach((post) => {
+					q += `($session_id, $post_id_${i}), `;
+					p[`post_id_${i}`] = post.data.id;
+					i++;
+				});
+				db.query(q.trimEnd().replace(/,$/g, '')).run(p);
 			});
 
 			perfEvents.push({
-				description: 'Updated views',
+				description: 'Scheduled update for session and views',
 				elapsed: performance.now() - perfEventTime,
 			});
 		}
 
 		perfEvents.push({
-			description: `Replaced ${perfTotalRemoved || 0} duplicate posts`,
+			description: `Replaced ${perfTotalRemoved || 0} duplicate post${(perfTotalRemoved || 0) != 1 ? 's': ''}`,
 			elapsed: performance.now() - perfStartTime,
 		});
 	}
