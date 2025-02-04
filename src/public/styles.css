@@ -180,6 +180,10 @@ a:visited {
   margin-left: auto;
 }
 
+.footer-item a:visited {
+  color: var(--link-color);
+}
+
 nav {
   display: flex;
   align-items: stretch;
