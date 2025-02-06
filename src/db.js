@@ -3,6 +3,13 @@ const db = new Database("lurker.db", {
 	strict: true,
 });
 
+// Foreign Keys support: https://www.sqlite.org/pragma.html#pragma_foreign_keys
+// Optimize for long-running connections: https://www.sqlite.org/pragma.html#pragma_optimize
+db.run(`
+  PRAGMA foreign_keys=on;
+  PRAGMA optimize=0x10002;
+`);
+
 function runMigration(name, migrationFn) {
 	const exists = db
 		.query("SELECT * FROM migrations WHERE name = $name")
@@ -147,6 +154,53 @@ runMigration("standardize-pref-columns", () => {
     ALTER TABLE users
     RENAME COLUMN collapseAutoModPref TO pref_collapseAutomod
   `).run();
+});
+
+// Switch sessions and views to support lazy deletes
+runMigration("lazy-delete-sessions", () => {
+  // Remove the UNIQUE constraint from `sessions`
+  // Add FK with cascade delete to `views`
+  db.run(`
+    PRAGMA foriegn_keys=off;
+    
+    BEGIN TRANSACTION;
+
+      ALTER TABLE sessions RENAME TO old_sessions;
+
+      CREATE TABLE sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        subreddit TEXT,
+        query TEXT,
+        CONSTRAINT fk_users
+          FOREIGN KEY(user_id)
+          REFERENCES users(id)
+          ON DELETE CASCADE
+      );
+
+      INSERT INTO sessions SELECT * FROM old_sessions;
+
+      ALTER TABLE views RENAME TO old_views;
+
+      CREATE TABLE views (
+        session_id INTEGER,
+        post_id TEXT,
+        CONSTRAINT fk_sessions
+          FOREIGN KEY(session_id)
+          REFERENCES sessions(id)
+          ON DELETE CASCADE
+      );
+
+      INSERT INTO views SELECT * FROM old_views;
+
+      DROP TABLE old_views;
+
+      DROP TABLE old_sessions;
+
+    COMMIT;
+
+    PRAGMA foriegn_keys=on;
+  `);
 });
 
 module.exports = { db };
