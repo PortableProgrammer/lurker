@@ -952,7 +952,7 @@ select {
   border-left-color: var(--msg-info);
 }
 
-.message.warning {
+.message.caution {
   border-left-color: var(--msg-caution);
 }
 
@@ -973,7 +973,7 @@ select {
   color: var(--msg-info);
 }
 
-.message.warning > .message-title {
+.message.caution > .message-title {
   color: var(--msg-caution);
 }
 

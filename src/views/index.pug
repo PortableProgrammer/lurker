@@ -4,6 +4,7 @@ include ../mixins/head
 include ../utils
   - var viewQuery = query && query.view ? query.view : 'compact'
   - var sortQuery = query && query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot'
+  - var currentPath = new URL(`http://lurker${currentUrl}`).pathname;
 doctype html
 html
   +head("home")
@@ -22,7 +23,7 @@ html
               a(href=`${multilink}?sort=${sortQuery}&view=${viewQuery}`)
                 | #{multititle}
             else
-              a(href=`/r/${subreddit}?sort=${sortQuery}&view=${viewQuery}`)
+              a(href=`${currentPath}?sort=${sortQuery}&view=${viewQuery}`)
                 | r/#{subreddit}
           if !isMulti
             div#button-container
@@ -35,12 +36,6 @@ html
               a.button(href=`/multi-edit/${multireddit}?sort=${sortQuery}&view=${viewQuery}`) edit
         if about && !isMulti
           div.about #{about.public_description}
-        //-else 
-          div.about 
-            | consider donating to&nbsp;
-            a(href="https://donate.stripe.com/dR62bTaZH1295Da4gg") oppiliappan
-            |, author of lurker
-        if about && !isMulti
           div.info-container
             p
               | #{fmtnum(about.accounts_active)} active
@@ -51,30 +46,30 @@ html
           summary.preference sorting by #{query.sort + (query.t?' '+query.t:'')}, #{viewQuery} view
           div.pref-opts
             div
-              a(href=`/r/${subreddit}?sort=hot&view=${viewQuery}` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
+              a(href=`${currentPath}?sort=hot&view=${viewQuery}` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
             div
-              a(href=`/r/${subreddit}?sort=best&view=${viewQuery}` onclick=`setPref('sort', 'best')` id=`pref_sort_best`) best
+              a(href=`${currentPath}?sort=best&view=${viewQuery}` onclick=`setPref('sort', 'best')` id=`pref_sort_best`) best
             div
-              a(href=`/r/${subreddit}?sort=new&view=${viewQuery}` onclick=`setPref('sort', 'new')` id=`pref_sort_new`) new
+              a(href=`${currentPath}?sort=new&view=${viewQuery}` onclick=`setPref('sort', 'new')` id=`pref_sort_new`) new
             div
-              a(href=`/r/${subreddit}?sort=rising&view=${viewQuery}` onclick=`setPref('sort', 'rising')` id=`pref_sort_rising`) rising
+              a(href=`${currentPath}?sort=rising&view=${viewQuery}` onclick=`setPref('sort', 'rising')` id=`pref_sort_rising`) rising
             div
-              a(href=`/r/${subreddit}?sort=top&view=${viewQuery}` onclick=`setPref('sort', 'top')` id=`pref_sort_top`) top
+              a(href=`${currentPath}?sort=top&view=${viewQuery}` onclick=`setPref('sort', 'top')` id=`pref_sort_top`) top
             div
-              a(href=`/r/${subreddit}?sort=top&t=day&view=${viewQuery}` onclick=`setPref('sort', 'top&t=day')` id=`pref_sort_top_day`) top day
+              a(href=`${currentPath}?sort=top&t=day&view=${viewQuery}` onclick=`setPref('sort', 'top&t=day')` id=`pref_sort_top_day`) top day
             div
-              a(href=`/r/${subreddit}?sort=top&t=week&view=${viewQuery}` onclick=`setPref('sort', 'top&t=week')` id=`pref_sort_top_week`) top week
+              a(href=`${currentPath}?sort=top&t=week&view=${viewQuery}` onclick=`setPref('sort', 'top&t=week')` id=`pref_sort_top_week`) top week
             div
-              a(href=`/r/${subreddit}?sort=top&t=month&view=${viewQuery}` onclick=`setPref('sort', 'top&t=month')` id=`pref_sort_top_month`) top month
+              a(href=`${currentPath}?sort=top&t=month&view=${viewQuery}` onclick=`setPref('sort', 'top&t=month')` id=`pref_sort_top_month`) top month
             div
-              a(href=`/r/${subreddit}?sort=top&t=year&view=${viewQuery}` onclick=`setPref('sort', 'top&t=year')` id=`pref_sort_top_year`) top year
+              a(href=`${currentPath}?sort=top&t=year&view=${viewQuery}` onclick=`setPref('sort', 'top&t=year')` id=`pref_sort_top_year`) top year
             div
-              a(href=`/r/${subreddit}?sort=top&t=all&view=${viewQuery}` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
+              a(href=`${currentPath}?sort=top&t=all&view=${viewQuery}` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
           div.pref-opts.view-opts
             div
-              a(href=`/r/${subreddit}?sort=${sortQuery}&view=card` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
+              a(href=`${currentPath}?sort=${sortQuery}&view=card` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
             div
-              a(href=`/r/${subreddit}?sort=${sortQuery}&view=compact` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
+              a(href=`${currentPath}?sort=${sortQuery}&view=compact` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
 
       if posts
         each child in posts.posts
@@ -82,7 +77,7 @@ html
 
         if perfEvents || posts.after
           div.footer
-            if perfEvents
+            //-if perfEvents
               div.footer-item
                 details(style="color: var(--text-color-muted); font-size: smaller;")
                   summary
@@ -93,4 +88,5 @@ html
             if posts.after
               div.footer-item
                 - var newQuery = {...query, after: posts.after}
-                a(href=`/r/${subreddit}?${encodeQueryParams(newQuery)}`) next ⟶
+                a(href=`${currentPath}?${encodeQueryParams(newQuery)}`) next 
+                  nobr ->
