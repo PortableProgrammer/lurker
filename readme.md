@@ -14,7 +14,8 @@ It is better than [`old-reddit`](https://old.reddit.com) because:
 - minimal use of client-side javascript
 - card and compact views
 - pagination
-- allows automatic collapsing of `automod` comments
+- allows automatic collapsing of `u/AutoModerator` comments
+- optional reduction of duplicate posts during a session
 - multireddit support
 - crosspost support
 - extensible support for popular 3rd-party media (imgur images and galleries, xkcd, etc.)
