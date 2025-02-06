@@ -58,24 +58,30 @@ html
                 p Automaticaly collapses comments made by &nbsp;
                   code u/AutoModerator
                   | . 
+          div.preference
+            input(type="checkbox" id="pref_trackSessions" checked=prefs.trackSessions!==0 onclick=`togglePref('trackSessions')`)
+            label(for="pref_trackSessions") Track Session Views
+            div.message.info
+              p.message-title Note
+              p May increase page load times, typically by ~0.5s to ~1s
+            div.message
+              p Limits duplicate posts by storing post ids already seen during the session, removing them from the feed on subsequent pages, and loading enough new posts to make up the difference.
+              p A new session is started when you naviate to 
+                a /home
+                | ,  
+                a /all
+                | , a subreddit, or a multireddit, and continues as long as you stay on the same subreddit or multireddit by clicking 
+                a next ->
+                | . 
 
-          details.preference
+          //-details.preference
             summary(style="color: var(--msg-caution);") Experimental - Proceed with caution
             div.preference-group
               div.preference
-                input(type="checkbox" id="pref_trackSessions" checked=prefs.trackSessions!==0 onclick=`togglePref('trackSessions')`)
-                label(for="pref_trackSessions") Track Session Views
-                div.message.warning
-                  p.message-title Warning
-                  p May increase page load times significantly after extended usage
-                div.message
-                  p Limits duplicate posts by storing post ids already seen during the session, removing them from the feed on subsequent pages, and loading enough new posts to make up the difference. A session is started when you first click &nbsp;
-                    code next ⟶
-                    | &nbsp; while browsing, and ends when you navigate to 
-                    code /home
-                    | ,  
-                    code /all
-                    | , or another subreddit, multireddit, etc.
+                input(type="checkbox" id="pref_trackSessionsDebug" checked=prefs.trackSessionsDebug!==0 onclick=`togglePref('trackSessionsDebug')`)
+                label(for="pref_trackSessionsDebug") Track Session Views Performance / Debug
+                div.message.caution
+                    p Shows Track Session Views performance and debug info in the footer
 
         if isAdmin
           h2 invites
