@@ -5,7 +5,9 @@ include ../utils
   - var currentPath = new URL(`http://lurker${currentUrl}`).pathname;
 doctype html
 html
-  +head("home")
+  - var subCount = (currentPath.match(/\+/g) || []).length + 1
+  - var title = subCount > 1 && isMulti && !multireddit ? `${ subCount } subreddit${subCount != 1 ? 's' : ''}` : currentPath.replace(/^\//g, '')
+  +head(title)
   include ../mixins/subUtils
   include ../mixins/prefUtils
 
