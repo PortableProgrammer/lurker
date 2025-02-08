@@ -851,22 +851,22 @@ form input[type="submit"]:hover {
   flex-flow: row wrap;
 }
 
-.invite-table {
+.dashboard-table {
   width: 100%;
   padding: 10px 0;
 }
 
-.invite-table th,
-.invite-table td
+.dashboard-table th,
+.dashboard-table td
 {
   padding: 5px 0;
 }
 
-.invite-table-header {
+.dashboard-table-header {
   text-align: left;
 }
 
-.invite-link {
+.dashboard-link {
   font-family: monospace;
 }
 

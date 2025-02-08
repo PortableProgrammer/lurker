@@ -8,12 +8,6 @@ mixin header(user)
       a(href=`/search`) search
     div.header-item
       a(href=`/subs`) subs
-    if user
-      div.header-item
-        a(href=`/dashboard`) #{user.username}
-        |&nbsp;
-        a(href='/logout') (logout)
-    else
-      div.header-item
-        a(href=`/login`) login
-
+    div.header-item 
+      a(href=`/dashboard` title=`dashboard`)
+        img(src=`/icons/reddit-silhouette.svg` style='height: 1.25rem;')
