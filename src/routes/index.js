@@ -15,7 +15,7 @@ const E = extlinks.ExtLinks;
 
 // GET /
 router.get("/", authenticateToken, async (req, res) => {
-	const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+	const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 	res.redirect(`/home${qs}`);
 });
 
@@ -25,7 +25,7 @@ router.get("/home", authenticateToken, async (req, res) => {
 		.query("SELECT * FROM subscriptions WHERE user_id = $id")
 		.all({ id: req.user.id });
 
-	const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+	const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 
 	if (subs.length === 0) {
 		res.redirect(`/r/all${qs}`);
@@ -55,7 +55,7 @@ router.get("/m/:multireddit", authenticateToken, async(req, res) => {
 		renderIndex(subs, req, res);
 	}
 	else {
-		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 		res.redirect(`/${qs}`);
 	}
 });
@@ -83,7 +83,6 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 		data: unescape_submission(response),
 		user: req.user,
 		from: req.query.from,
-		query: req.query,
 		prefs,
 	});
 });
@@ -112,6 +111,7 @@ router.get(
 			comments,
 			parent_id,
 			user: req.user,
+			from: req.query.from,
 			prefs,
 		});
 	},
@@ -135,7 +135,6 @@ router.get("/subs", authenticateToken, async (req, res) => {
 		subs,
 		multis,
 		user: req.user,
-		query: req.query,
 	});
 });
 
@@ -151,7 +150,7 @@ router.get("/multi-create", authenticateToken, async (req, res) => {
 	
 	// If this multi already exists, or at least a name has been entered, redirect to multi-edit instead
 	if (multi_exists || req.query.q) {
-		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 		res.redirect(`/multi-edit/${multireddit}${qs}`);
 	}
 	else {
@@ -160,7 +159,6 @@ router.get("/multi-create", authenticateToken, async (req, res) => {
 			user: req.user,
 			multireddit: multireddit,
 			original_query: req.query.q,
-			query: req.query,
 			items,
 			message,
 		});
@@ -170,8 +168,7 @@ router.get("/multi-create", authenticateToken, async (req, res) => {
 // GET /multi-edit
 router.get("/multi-edit/:multireddit", authenticateToken, async (req, res) => {
 	var multireddit = req.params.multireddit;
-	const query = req.query || {};
-
+	
 	const multi_sub = db
 		.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
 		.all({ id: req.user.id, multireddit: multireddit });
@@ -194,7 +191,6 @@ router.get("/multi-edit/:multireddit", authenticateToken, async (req, res) => {
 		mode: 'edit',
 		multireddit,
 		subs: multi_sub,
-		query,
 		original_query: req.query.q,
 		user: req.user,
 		message,
@@ -213,6 +209,7 @@ router.get("/sub-search", authenticateToken, async (req, res) => {
 	if (!req.query || !req.query.q) {
 		res.render("sub-search", { user: req.user });
 	} else {
+		const prefs = get_user_prefs(req.user.id);
 		const { items, after } = await G.searchSubreddits(req.query.q);
 		const subs = db
 			.query("SELECT subreddit FROM subscriptions WHERE user_id = $id")
@@ -229,13 +226,14 @@ router.get("/sub-search", authenticateToken, async (req, res) => {
 			message,
 			user: req.user,
 			original_query: req.query.q,
-			query: req.query,
+			prefs,
 		});
 	}
 });
 
 // GET /post-search
 router.get("/post-search", authenticateToken, async (req, res) => {
+	const prefs = get_user_prefs(req.user.id);
 	if (!req.query || !req.query.q) {
 		res.render("post-search", { user: req.user });
 	} else {
@@ -245,7 +243,7 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 				? "no results found"
 				: `showing ${items.length} results`;
 
-		if (req.query.view == 'card' && items) {
+		if (prefs.view == 'card' && items) {
 			items.forEach(unescape_selftext);
 
 			var extPromises = [];
@@ -271,7 +269,7 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 			user: req.user,
 			original_query: req.query.q,
 			currentUrl: req.url,
-			query: req.query,
+			prefs,
 		});
 	}
 });
@@ -297,7 +295,7 @@ router.get("/dashboard", authenticateToken, async (req, res) => {
 
 	const prefs = get_user_prefs(req.user.id);
 
-	res.render("dashboard", { invites, isAdmin, user: req.user, query: req.query, prefs });
+	res.render("dashboard", { invites, isAdmin, user: req.user, prefs });
 });
 
 router.get("/create-invite", authenticateAdmin, async (req, res) => {
@@ -533,13 +531,6 @@ async function renderIndex(subreddit, req, res) {
 
 	const prefs = get_user_prefs(req.user.id);
 
-	if (!query.sort) {
-		query.sort = prefs.sort;
-	}
-	if (!query.view) {
-		query.view = prefs.view;
-	}
-
 	let isSubbed = false;
 	if (!isMulti) {
 		isSubbed =
@@ -549,7 +540,7 @@ async function renderIndex(subreddit, req, res) {
 				)
 				.get({ id: req.user.id, subreddit }) !== null;
 	}
-	const postsReq = G.getSubmissions(query.sort, `${subreddit}`, query);
+	const postsReq = G.getSubmissions(prefs.sort.split('&')[0], `${subreddit}`, { ...query, sort: prefs.sort });
 	const aboutReq = G.getSubreddit(`${subreddit}`);
 
 	// Track Sessions Performance logging
@@ -681,7 +672,7 @@ async function renderIndex(subreddit, req, res) {
 				let bufferFactor = (removedPosts > 10 ? 1.25 : removedPosts > 5 ? 1.5 : 2);
 				let bufferLimit = Math.round(removedPosts * bufferFactor);
 
-				const postsReq = G.getSubmissions(query.sort, `${subreddit}`, { ...query, after: posts.after, limit: bufferLimit });
+				const postsReq = G.getSubmissions(prefs.sort.split('&')[0], `${subreddit}`, { ...query, sort: prefs.sort, after: posts.after, limit: bufferLimit });
 				const [extraPosts] = await Promise.all([postsReq]);
 			
 				// If we fail to retrieve any more posts, give up entirely and render the view
@@ -800,7 +791,7 @@ async function renderIndex(subreddit, req, res) {
 		});
 	}
 
-	if (query.view == 'card' && posts && posts.posts) {
+	if (prefs.view == 'card' && posts && posts.posts) {
 		posts.posts.forEach(unescape_selftext);
 		posts.posts.forEach(unescape_media_embed);
 
@@ -834,6 +825,7 @@ async function renderIndex(subreddit, req, res) {
 		user: req.user,
 		isSubbed,
 		currentUrl: req.url,
+		prefs,
 		perfEvents,
 	});
 }

@@ -21,7 +21,7 @@ html
           h2 preferences
 
           details.preference
-            summary Sort: #{prefs.sort}
+            summary Sort: #{prefs.sort.replace('&t=', ' ')}
             div.pref-opts
               div
                 a(href=`/dashboard` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
@@ -63,13 +63,13 @@ html
             label(for="pref_trackSessions") Track Session Views
             div.message.info
               p.message-title Note
-              p May increase page load times, typically by ~0.5s to ~1s
+              p May increase page load times, typically by ~0.5s to ~1s.
             div.message
               p Limits duplicate posts by storing post ids already seen during the session, removing them from the feed on subsequent pages, and loading enough new posts to make up the difference.
               p A new session is started when you naviate to 
-                a /home
+                a home
                 | ,  
-                a /all
+                a all
                 | , a subreddit, or a multireddit, and continues as long as you stay on the same subreddit or multireddit by clicking 
                 a next ->
                 | . 

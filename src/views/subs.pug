@@ -1,8 +1,6 @@
 include ../mixins/header
 include ../mixins/head
 
-- var viewQuery = query && query.view ? query.view : 'compact'
-- var sortQuery = query && query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot'
 doctype html
 html
   +head("subscriptions")
@@ -14,16 +12,16 @@ html
         div(style="display: flex;")
           h1(style="margin: 0;") multireddits
           div#button-container
-            a.button(href=`/multi-create?sort=${sortQuery}&view=${viewQuery}`) create
+            a.button(href=`/multi-create`) create
         p
           each m in multis 
             - var multireddit = m.multireddit
             div.sub-title
               h4
-                a(href=`/m/${multireddit}?sort=${sortQuery}&view=${viewQuery}`) 
+                a(href=`/m/${multireddit}`) 
                   | m/#{multireddit}
               div#button-container
-                a.button(href=`/multi-edit/${multireddit}?sort=${sortQuery}&view=${viewQuery}`) edit
+                a.button(href=`/multi-edit/${multireddit}`) edit
         h1 subscriptions
         p
           each s in subs 
@@ -31,7 +29,7 @@ html
             - var isSubbed = true
             div.sub-title
               h4
-                a(href=`/r/${subreddit}?sort=${sortQuery}&view=${viewQuery}`) 
+                a(href=`/r/${subreddit}`) 
                   | r/#{subreddit}
               div#button-container
                 if isSubbed
