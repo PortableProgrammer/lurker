@@ -5,6 +5,12 @@ include ../utils
 doctype html
 html
   +head("dashboard")
+  script(type='text/javascript').
+    function areYouSure(event, type, id) {
+      if (!window.confirm('Are you sure you want to delete ' + type + ' ' + id + '?', )) {
+        event.preventDefault();
+      }
+    }
   include ../mixins/prefUtils
 
   body
@@ -14,95 +20,145 @@ html
         h1 dashboard
 
         if message 
-          div.dashboard-error-message
-            | #{message}
+          div.message.success
+            p.message-title Success
+            p #{message}
 
-        if prefs
-          h2 preferences
+        if error
+          div.message.danger
+            p.message-title Error
+            p #{error}
 
-          details.preference
-            summary Sort: #{prefs.sort}
-            div.pref-opts
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'best')` id=`pref_sort_best`) best
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'new')` id=`pref_sort_new`) new
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'rising')` id=`pref_sort_rising`) rising
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'top')` id=`pref_sort_top`) top
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=day')` id=`pref_sort_top_day`) top day
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=week')` id=`pref_sort_top_week`) top week
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=month')` id=`pref_sort_top_month`) top month
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=year')` id=`pref_sort_top_year`) top year
-              div
-                a(href=`/dashboard` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
+        h2 #{user.username} 
+          if isAdmin
+            | (admin) 
+          a(href=`/logout` style='font-weight: normal; vertical-align: middle;').button logout
+        
+        details.dashboard-details
+          summary preferences
+          div.preference-group
+            details.preference
+              summary sort: #{prefs.sort.replace('&t=', ' ')}
+              div.pref-opts
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'hot')` id=`pref_sort_hot`) hot
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'best')` id=`pref_sort_best`) best
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'new')` id=`pref_sort_new`) new
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'rising')` id=`pref_sort_rising`) rising
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'top')` id=`pref_sort_top`) top
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'top&t=day')` id=`pref_sort_top_day`) top day
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'top&t=week')` id=`pref_sort_top_week`) top week
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'top&t=month')` id=`pref_sort_top_month`) top month
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'top&t=year')` id=`pref_sort_top_year`) top year
+                div
+                  a(href=`/dashboard` onclick=`setPref('sort', 'top&t=all')` id=`pref_sort_top_all`) top all
 
-          details.preference
-            summary View: #{prefs.view}
-            div.pref-opts.view-opts
-              div
-                a(href=`/dashboard` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
-              div
-                a(href=`/dashboard` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
-          div.preference
-            input(type="checkbox" id="pref_collapseAutoMod" checked=prefs.collapseAutoMod!==0 onclick=`togglePref('collapseAutoMod')`)
-            label(for="pref_collapseAutoMod") Collapse Automod Comments
-            div.message
-                p Automaticaly collapses comments made by &nbsp;
-                  code u/AutoModerator
+            details.preference
+              summary view: #{prefs.view}
+              div.pref-opts.view-opts
+                div
+                  a(href=`/dashboard` onclick=`setPref('view', 'card')` id=`pref_view_card`) card
+                div
+                  a(href=`/dashboard` onclick=`setPref('view', 'compact')` id=`pref_view_compact`) compact
+            div.preference
+              input(type="checkbox" id="pref_collapseAutoMod" checked=prefs.collapseAutoMod!==0 onclick=`togglePref('collapseAutoMod')`)
+              label(for="pref_collapseAutoMod") Collapse Automod Comments
+              div.message
+                  p Automaticaly collapses comments made by &nbsp;
+                    code u/AutoModerator
+                    | . 
+            div.preference
+              input(type="checkbox" id="pref_trackSessions" checked=prefs.trackSessions!==0 onclick=`togglePref('trackSessions')`)
+              label(for="pref_trackSessions") Track Session Views
+              div.message.info
+                p.message-title Note
+                p May increase page load times, typically by ~0.5s to ~1s.
+              div.message
+                p Limits duplicate posts by storing post ids already seen during the session, removing them from the feed on subsequent pages, and loading enough new posts to make up the difference.
+                p A new session is started when you navigate to 
+                  a home
+                  | ,  
+                  a popular
+                  | ,  
+                  a all
+                  | , a subreddit, or a multireddit, and continues as long as you stay on the same subreddit or multireddit by clicking 
+                  a next ->
                   | . 
-          div.preference
-            input(type="checkbox" id="pref_trackSessions" checked=prefs.trackSessions!==0 onclick=`togglePref('trackSessions')`)
-            label(for="pref_trackSessions") Track Session Views
-            div.message.info
-              p.message-title Note
-              p May increase page load times, typically by ~0.5s to ~1s
-            div.message
-              p Limits duplicate posts by storing post ids already seen during the session, removing them from the feed on subsequent pages, and loading enough new posts to make up the difference.
-              p A new session is started when you naviate to 
-                a /home
-                | ,  
-                a /all
-                | , a subreddit, or a multireddit, and continues as long as you stay on the same subreddit or multireddit by clicking 
-                a next ->
-                | . 
 
-          //-details.preference
-            summary(style="color: var(--msg-caution);") Experimental - Proceed with caution
-            div.preference-group
-              div.preference
-                input(type="checkbox" id="pref_trackSessionsDebug" checked=prefs.trackSessionsDebug!==0 onclick=`togglePref('trackSessionsDebug')`)
-                label(for="pref_trackSessionsDebug") Track Session Views Performance / Debug
-                div.message.caution
-                    p Shows Track Session Views performance and debug info in the footer
+            //-details.preference
+              summary(style="color: var(--msg-caution);") Experimental - Proceed with caution
+              div.preference-group
+                div.preference
+                  div.message.info
+                      p No experimental preferences available!
+
+        form(action='/dashboard' id='dashboard_form' method='post').dashboard-form
+        details.dashboard-details
+          summary update profile
+          div.preference-group
+            div.dashboard-form
+              p password
+                input(type="password" name="password_new" placeholder="new password" form="dashboard_form").dashboard-input
+                input(type="password" name="password_confirm" placeholder="confirm new password" form="dashboard_form").dashboard-input
+
+            div.dashboard-form
+              p username
+                input(type="text" name="username_new" placeholder="new username" form="dashboard_form").dashboard-input
+
+            div.dashboard-form
+              p save changes
+                input(type="password" name="password_current" placeholder="current password" form="dashboard_form" required).dashboard-input
+                button(form="dashboard_form").dashboard-button update
 
         if isAdmin
+          h2 users
+
+          if users
+            table.dashboard-table
+              tr
+                th.dashboard-table-header username
+                th.dashboard-table-header admin
+                th.dashboard-table-header delete
+              each user_row in users
+                tr
+                  td #{user_row.username}
+                  td #{user_row.isAdmin ? 'yes' : 'no'}
+                  td 
+                    if user.id !== user_row.id && users.length > 1
+                      a(href=`/delete-user/${user.id}` onclick=`areYouSure(event, 'user', '${user.username}')`) delete
+                    else
+                      | current user
+
           h2 invites
 
           if invites
-            table.invite-table
+            table.dashboard-table
               tr
-                th.invite-table-header link
-                th.invite-table-header created
-                th.invite-table-header claimed
-                th.invite-table-header delete
+                th.dashboard-table-header link
+                th.dashboard-table-header created
+                th.dashboard-table-header claimed
+                th.dashboard-table-header delete
               each invite in invites
                 tr
-                  td.invite-link
+                  td.dashboard-link
                     a(href=`/register?token=${invite.token}`) #{invite.token} 
                   td #{timeDifference(Date.now(), invite.createdAt)} ago
                   if invite.usedAt
                     td #{timeDifference(Date.now(), invite.usedAt)} ago
                   else
                     td unclaimed
-                  td 
-                    a(href=`/delete-invite/${invite.id}`) delete
+                  td
+                    if invite.usedAt
+                      claimed
+                    else
+                      a(href=`/delete-invite/${invite.id}` onclick=`areYouSure(event, 'invite', '${invite.token}')`) delete
 
           a(href="/create-invite") create invite

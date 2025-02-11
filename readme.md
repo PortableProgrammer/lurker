@@ -1,6 +1,6 @@
 # lurker
 
-lurker is a selfhostable, read-only reddit client, forked from [oppiliappan/lurker](https://github.com/oppiliappan/lurker)
+lurker is a selfhostable, read-only Reddit client, forked from [oppiliappan/lurker](https://github.com/oppiliappan/lurker)
 
 It is better than [`old-reddit`](https://old.reddit.com) because:
 
@@ -104,7 +104,7 @@ services.lurker = {
 
 lurker is open to registrations when first started.
 Navigate to `/register` and create an account, which will be an admin account.
-Click on your username at the top-right to view the dashboard and to invite other users to your instance.
+Click on Snoo at the top-right to view the dashboard, change your preferences, and to invite other users to your instance.
 
 ## Technical
 
@@ -144,3 +144,9 @@ You can now browse your lurker devcontainer instance remotely via `http://<host_
 nix shell .#        # get a devshell
 nix build .#lurker  # build the thing
 ```
+
+## 3rd-party Assets
+
+Reddit brand assets and elements are utilized in compliance with the [Reddit Brand foundation](https://reddit.lingoapp.com/k/Brand-foundation-oYYL4W?v=29) (`v2.09` at the time of last review).
+
+lurker utilizes the `Inter` typeface by [Rasmus Andersson](https://rsms.me/inter/)

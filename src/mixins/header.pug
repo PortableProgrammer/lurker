@@ -1,21 +1,13 @@
 mixin header(user)
-  - var viewQuery = 'view=' + (prefs ? prefs.view : (query && query.view ? query.view : 'card'))
-  - var sortQuery = 'sort=' + (prefs ? prefs.sort : (query ? (query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot') : 'hot'))
   div.header
     div.header-item
-      a(href=`/home?${viewQuery}`) home
+      a(href=`/home`) home
     div.header-item
-      a(href=`/r/all?${viewQuery}`) all
+      a(href=`/r/all`) all
     div.header-item
-      a(href=`/search?${viewQuery}`) search
+      a(href=`/search`) search
     div.header-item
-      a(href=`/subs?${viewQuery}`) subs
-    if user
-      div.header-item
-        a(href=`/dashboard?${viewQuery}`) #{user.username}
-        |&nbsp;
-        a(href='/logout') (logout)
-    else
-      div.header-item
-        a(href=`/login`) login
-
+      a(href=`/subs`) subs
+    div.header-item 
+      a(href=`/dashboard` title=`dashboard`)
+        img(src=`/icons/reddit-silhouette.svg` style='height: 1.25rem;')

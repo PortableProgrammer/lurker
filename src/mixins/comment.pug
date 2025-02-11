@@ -44,7 +44,7 @@ mixin comment(com, isfirst, parent_id, next_id, prev_id)
 
   if com.kind == "more"
     div(class=`more ${isfirst ? 'first' : ''}`)
-      a(href=`/comments/${parent_id}/comment/${data.id}`)
+      a(href=`/comments/${parent_id}/comment/${data.id}?from=${from}#${parent_id}`)
         | #{data.count} more #{fmttxt(data.count, 'comment')}
   else
     div(class=`comment ${isfirst ? 'first' : ''} ${data.stickied ? 'sticky' : ''}`)

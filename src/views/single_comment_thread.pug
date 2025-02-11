@@ -10,8 +10,8 @@ html
     main#content
       +header()
       div.comments-container
-        a(href=`/comments/${parent_id}`)
-          | ← back to parent thread
+        a(href=`/comments/${parent_id}?from=${from}#${parent_id}`)
+          | <- back to parent thread
         if comments.length == 0
           div
             p nothing to see here, this thread was shadow-banned?

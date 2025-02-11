@@ -7,8 +7,6 @@ include ../utils
 
 - var post = data.post
 - var comments = data.comments
-- var viewQuery = 'view=' + (query && query.view ? query.view : 'compact')
-- var sortQuery = 'sort=' + (query && query.sort ? query.sort + (query.t ? '&t=' + query.t : '') : 'hot')
 doctype html
 html
   +head(post.title)
@@ -30,7 +28,7 @@ html
             | &nbsp;&nbsp;
             | ·
             | &nbsp;&nbsp;
-          a(href=`/r/${post.subreddit}?${sortQuery}&${viewQuery}`) r/#{post.subreddit}
+          a(href=`/r/${post.subreddit}`) r/#{post.subreddit}
 
         div.info-container 
           p

@@ -15,7 +15,7 @@ const E = extlinks.ExtLinks;
 
 // GET /
 router.get("/", authenticateToken, async (req, res) => {
-	const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+	const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 	res.redirect(`/home${qs}`);
 });
 
@@ -25,7 +25,7 @@ router.get("/home", authenticateToken, async (req, res) => {
 		.query("SELECT * FROM subscriptions WHERE user_id = $id")
 		.all({ id: req.user.id });
 
-	const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+	const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 
 	if (subs.length === 0) {
 		res.redirect(`/r/all${qs}`);
@@ -55,7 +55,7 @@ router.get("/m/:multireddit", authenticateToken, async(req, res) => {
 		renderIndex(subs, req, res);
 	}
 	else {
-		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 		res.redirect(`/${qs}`);
 	}
 });
@@ -83,7 +83,6 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 		data: unescape_submission(response),
 		user: req.user,
 		from: req.query.from,
-		query: req.query,
 		prefs,
 	});
 });
@@ -112,6 +111,7 @@ router.get(
 			comments,
 			parent_id,
 			user: req.user,
+			from: req.query.from,
 			prefs,
 		});
 	},
@@ -135,7 +135,6 @@ router.get("/subs", authenticateToken, async (req, res) => {
 		subs,
 		multis,
 		user: req.user,
-		query: req.query,
 	});
 });
 
@@ -151,7 +150,7 @@ router.get("/multi-create", authenticateToken, async (req, res) => {
 	
 	// If this multi already exists, or at least a name has been entered, redirect to multi-edit instead
 	if (multi_exists || req.query.q) {
-		const qs = req.query ? ('?' + new URLSearchParams(req.query).toString()) : '';
+		const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
 		res.redirect(`/multi-edit/${multireddit}${qs}`);
 	}
 	else {
@@ -160,7 +159,6 @@ router.get("/multi-create", authenticateToken, async (req, res) => {
 			user: req.user,
 			multireddit: multireddit,
 			original_query: req.query.q,
-			query: req.query,
 			items,
 			message,
 		});
@@ -170,8 +168,7 @@ router.get("/multi-create", authenticateToken, async (req, res) => {
 // GET /multi-edit
 router.get("/multi-edit/:multireddit", authenticateToken, async (req, res) => {
 	var multireddit = req.params.multireddit;
-	const query = req.query || {};
-
+	
 	const multi_sub = db
 		.query("SELECT * FROM multireddits WHERE user_id = $id AND multireddit = $multireddit COLLATE NOCASE")
 		.all({ id: req.user.id, multireddit: multireddit });
@@ -194,7 +191,6 @@ router.get("/multi-edit/:multireddit", authenticateToken, async (req, res) => {
 		mode: 'edit',
 		multireddit,
 		subs: multi_sub,
-		query,
 		original_query: req.query.q,
 		user: req.user,
 		message,
@@ -213,6 +209,7 @@ router.get("/sub-search", authenticateToken, async (req, res) => {
 	if (!req.query || !req.query.q) {
 		res.render("sub-search", { user: req.user });
 	} else {
+		const prefs = get_user_prefs(req.user.id);
 		const { items, after } = await G.searchSubreddits(req.query.q);
 		const subs = db
 			.query("SELECT subreddit FROM subscriptions WHERE user_id = $id")
@@ -229,13 +226,14 @@ router.get("/sub-search", authenticateToken, async (req, res) => {
 			message,
 			user: req.user,
 			original_query: req.query.q,
-			query: req.query,
+			prefs,
 		});
 	}
 });
 
 // GET /post-search
 router.get("/post-search", authenticateToken, async (req, res) => {
+	const prefs = get_user_prefs(req.user.id);
 	if (!req.query || !req.query.q) {
 		res.render("post-search", { user: req.user });
 	} else {
@@ -245,7 +243,7 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 				? "no results found"
 				: `showing ${items.length} results`;
 
-		if (req.query.view == 'card' && items) {
+		if (prefs.view == 'card' && items) {
 			items.forEach(unescape_selftext);
 
 			var extPromises = [];
@@ -271,33 +269,100 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 			user: req.user,
 			original_query: req.query.q,
 			currentUrl: req.url,
-			query: req.query,
+			prefs,
 		});
 	}
 });
 
 // GET /dashboard
 router.get("/dashboard", authenticateToken, async (req, res) => {
-	let invites = null;
-	const isAdmin = db
-		.query("SELECT isAdmin FROM users WHERE id = $id and isAdmin = 1")
-		.get({
-			id: req.user.id,
-		});
-	if (isAdmin) {
-		invites = db
-			.query("SELECT * FROM invites")
-			.all()
-			.map((inv) => ({
-				...inv,
-				createdAt: Date.parse(inv.createdAt),
-				usedAt: Date.parse(inv.usedAt),
-			}));
+	const data = get_dashboard_data(req);
+	res.render("dashboard", data);
+});
+
+// POST /dashboard
+router.post("/dashboard", authenticateToken, async (req, res) => {
+	// Get the default dashboard data
+	const data = get_dashboard_data(req);
+
+	// Update user record
+	let message = null;
+	let error = null;
+
+	const password_current = req.body.password_current || '';
+	const password_new = req.body.password_new || '';
+	const password_confirm = req.body.password_confirm || '';
+	const username = req.body.username_new || '';
+
+	if (!password_new && !password_confirm && !username) {
+		error = 'Nothing to update';
+	}
+	else {
+		// Validate the current password before any updates
+		const user = db
+			.query("SELECT password_hash FROM users WHERE id = $user_id")
+			.get({ user_id: req.user.id });
+		if (!user || !(await Bun.password.verify(password_current, user.password_hash))) {
+			error = 'Invalid current password';
+		}
 	}
 
-	const prefs = get_user_prefs(req.user.id);
+	// Check for password update
+	if (!error && req.body.password_new && req.body.password_confirm) {
+		// Ensure the new and confirm passwords match
+		if (password_new !== password_confirm) {
+			error = 'New passwords do not match';
+		}
+		else {
+			// Valid password; hash and update
+			const hashedPassword = await Bun.password.hash(password_new);
+			db.query(`
+				UPDATE users
+				SET password_hash = $hash
+				WHERE id = $user_id
+			`).run({ user_id: req.user.id, hash: hashedPassword });
+			message = 'Updated password';
+		}
+	}
 
-	res.render("dashboard", { invites, isAdmin, user: req.user, query: req.query, prefs });
+	// Check for username update
+	let token = null;
+	if (!error && req.body.username_new) {
+		// Ensure this username is not in use
+		const user = db
+			.query("SELECT * FROM users WHERE username = $username")
+			.get({ username });
+		if (user) {
+			error = `User "${username}" already exists`;
+		}
+		else {
+			// Update the username and reissue the auth token
+			db.query(`
+				UPDATE users
+				SET username = $username
+				WHERE id = $user_id
+			`).run({ user_id: req.user.id, username: username });
+
+			token = jwt.sign({ username, id: req.user.id }, JWT_KEY, {
+				expiresIn: "5d",
+			});
+
+			// Update the data with the new user and token
+			data.user = jwt.verify(token, JWT_KEY);
+
+			message = 'Updated username';
+		}
+	}
+
+	if (token) {
+		res.cookie("auth_token", token, {
+			httpOnly: true,
+			maxAge: 5 * 24 * 60 * 60 * 1000,
+		}).render("dashboard", { ...data, message, error });
+	}
+	else {
+		res.render("dashboard", { ...data, message, error });
+	}
 });
 
 router.get("/create-invite", authenticateAdmin, async (req, res) => {
@@ -313,19 +378,20 @@ router.get("/create-invite", authenticateAdmin, async (req, res) => {
 
 	try {
 		createInvite();
-		return res.redirect("/dashboard");
+		return res.redirect(`/dashboard`);
 	} catch (err) {
 		console.log(err);
-		return res.send("failed to create invite");
+		return res.redirect(`/dashboard`);
 	}
 });
 
 router.get("/delete-invite/:id", authenticateToken, async (req, res) => {
 	try {
 		db.run("DELETE FROM invites WHERE id = $id", { id: req.params.id });
-		return res.redirect("/dashboard");
+		return res.redirect(`/dashboard`);
 	} catch (err) {
-		return res.send("failed to delete invite");
+		console.log(err);
+		return res.redirect(`/dashboard`);
 	}
 });
 
@@ -526,19 +592,46 @@ router.post("/multi-remove", authenticateToken, async (req, res) => {
 
 module.exports = router;
 
+function get_dashboard_data(req) {
+	let invites = null;
+	let users = null;
+	const isAdmin = db
+		.query("SELECT isAdmin FROM users WHERE id = $id and isAdmin = 1")
+		.get({
+			id: req.user.id,
+		});
+	if (isAdmin) {
+		invites = db
+			.query("SELECT * FROM invites ORDER BY createdAt DESC")
+			.all()
+			.map((inv) => ({
+				...inv,
+				createdAt: Date.parse(inv.createdAt),
+				usedAt: Date.parse(inv.usedAt),
+			}));
+		
+		users = db
+			.query(`SELECT * FROM users ORDER BY isAdmin DESC, username`)
+			.all();
+	}
+
+	const prefs = get_user_prefs(req.user.id);
+
+	return {
+		user: req.user,
+		invites,
+		users,
+		isAdmin,
+		prefs,
+	};
+}
+
 async function renderIndex(subreddit, req, res) {
 	const multireddit = req.query.lurker_multi;
 	const isMulti = subreddit.includes("+") || multireddit;
 	const query = req.query ? req.query : {};
 
 	const prefs = get_user_prefs(req.user.id);
-
-	if (!query.sort) {
-		query.sort = prefs.sort;
-	}
-	if (!query.view) {
-		query.view = prefs.view;
-	}
 
 	let isSubbed = false;
 	if (!isMulti) {
@@ -549,7 +642,7 @@ async function renderIndex(subreddit, req, res) {
 				)
 				.get({ id: req.user.id, subreddit }) !== null;
 	}
-	const postsReq = G.getSubmissions(query.sort, `${subreddit}`, query);
+	const postsReq = G.getSubmissions(prefs.sort.split('&')[0], `${subreddit}`, { ...query, sort: prefs.sort });
 	const aboutReq = G.getSubreddit(`${subreddit}`);
 
 	// Track Sessions Performance logging
@@ -681,7 +774,7 @@ async function renderIndex(subreddit, req, res) {
 				let bufferFactor = (removedPosts > 10 ? 1.25 : removedPosts > 5 ? 1.5 : 2);
 				let bufferLimit = Math.round(removedPosts * bufferFactor);
 
-				const postsReq = G.getSubmissions(query.sort, `${subreddit}`, { ...query, after: posts.after, limit: bufferLimit });
+				const postsReq = G.getSubmissions(prefs.sort.split('&')[0], `${subreddit}`, { ...query, sort: prefs.sort, after: posts.after, limit: bufferLimit });
 				const [extraPosts] = await Promise.all([postsReq]);
 			
 				// If we fail to retrieve any more posts, give up entirely and render the view
@@ -800,7 +893,7 @@ async function renderIndex(subreddit, req, res) {
 		});
 	}
 
-	if (query.view == 'card' && posts && posts.posts) {
+	if (prefs.view == 'card' && posts && posts.posts) {
 		posts.posts.forEach(unescape_selftext);
 		posts.posts.forEach(unescape_media_embed);
 
@@ -834,6 +927,7 @@ async function renderIndex(subreddit, req, res) {
 		user: req.user,
 		isSubbed,
 		currentUrl: req.url,
+		prefs,
 		perfEvents,
 	});
 }
