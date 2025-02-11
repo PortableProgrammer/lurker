@@ -420,6 +420,27 @@ form {
   width: 90%;
 }
 
+.dashboard-form {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  gap: 10px;
+}
+
+.dashboard-form p {
+  font-weight: bold;
+  width: 100%;
+}
+
+.dashboard-input {
+  flex: 9;
+}
+
+.dashboard-button {
+  flex: 1;
+  padding: 10px;
+}
+
 @media (min-width: 768px) {
   :root {
     --border-radius-card: 1vmin;
@@ -462,6 +483,10 @@ form {
   }
   .post-media {
     width: 50%;
+  }
+  .dashboard-form p {
+    font-weight: bold;
+    width: 80%;
   }
   form {
     width: 40%;
@@ -516,6 +541,10 @@ form {
     display: inline
   }
   .post-media {
+    width: 50%;
+  }
+  .dashboard-form p {
+    font-weight: bold;
     width: 50%;
   }
   form {
@@ -702,6 +731,22 @@ details[open] summary::before {
 details:not([open]) summary::before {
   content: "";
   padding-right: 10px;
+}
+
+details.dashboard-details summary {
+  display: block;
+  font-size: 1.17em;
+  margin-block-start: 1em;
+  margin-block-end: 1em;
+  margin-inline-start: 0px;
+  margin-inline-end: 0px;
+  font-weight: bold;
+}
+
+details.preference summary {
+  font-size: unset;
+  margin-block: unset;
+  font-weight: unset;
 }
 
 .footer {

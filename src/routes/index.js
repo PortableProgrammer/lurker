@@ -276,76 +276,58 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 
 // GET /dashboard
 router.get("/dashboard", authenticateToken, async (req, res) => {
-	let invites = null;
-	let users = null;
-	const isAdmin = db
-		.query("SELECT isAdmin FROM users WHERE id = $id and isAdmin = 1")
-		.get({
-			id: req.user.id,
-		});
-	if (isAdmin) {
-		invites = db
-			.query("SELECT * FROM invites ORDER BY createdAt DESC")
-			.all()
-			.map((inv) => ({
-				...inv,
-				createdAt: Date.parse(inv.createdAt),
-				usedAt: Date.parse(inv.usedAt),
-			}));
-		
-		users = db
-			.query(`SELECT * FROM users ORDER BY isAdmin DESC, username`)
-			.all();
-	}
-
-	const prefs = get_user_prefs(req.user.id);
-
-	const message = req.query.message;
-	const error = req.query.error;
-
-	res.render("dashboard", { invites, users, message, error, isAdmin, user: req.user, prefs });
+	const data = get_dashboard_data(req);
+	res.render("dashboard", data);
 });
 
 // POST /dashboard
 router.post("/dashboard", authenticateToken, async (req, res) => {
+	// Get the default dashboard data
+	const data = get_dashboard_data(req);
+
 	// Update user record
 	let message = null;
 	let error = null;
 
-	// Check for password update
-	if (req.body.password_current && req.body.password_new && req.body.password_confirm) {
-		const password_current = req.body.password_current;
-		const password_new = req.body.password_new;
-		const password_confirm = req.body.password_confirm;
+	const password_current = req.body.password_current || '';
+	const password_new = req.body.password_new || '';
+	const password_confirm = req.body.password_confirm || '';
+	const username = req.body.username_new || '';
 
+	if (!password_new && !password_confirm && !username) {
+		error = 'Nothing to update';
+	}
+	else {
+		// Validate the current password before any updates
+		const user = db
+			.query("SELECT password_hash FROM users WHERE id = $user_id")
+			.get({ user_id: req.user.id });
+		if (!user || !(await Bun.password.verify(password_current, user.password_hash))) {
+			error = 'Invalid current password';
+		}
+	}
+
+	// Check for password update
+	if (!error && req.body.password_new && req.body.password_confirm) {
 		// Ensure the new and confirm passwords match
 		if (password_new !== password_confirm) {
 			error = 'New passwords do not match';
 		}
 		else {
-			// Validate the current password
-			const user = db
-				.query("SELECT password_hash FROM users WHERE id = $user_id")
-				.get({ user_id: req.user.id });
-			if (user && (await Bun.password.verify(password_current, user.password_hash))) {
-				// Valid password; hash and update
-				const hashedPassword = await Bun.password.hash(password_new);
-				db.query(`
-					UPDATE users
-					SET password_hash = $hash
-					WHERE id = $user_id
-				`).run({ user_id: req.user.id, hash: hashedPassword });
-				message = 'Updated password';
-			}
-			else {
-				error = 'Invalid current password';
-			}
+			// Valid password; hash and update
+			const hashedPassword = await Bun.password.hash(password_new);
+			db.query(`
+				UPDATE users
+				SET password_hash = $hash
+				WHERE id = $user_id
+			`).run({ user_id: req.user.id, hash: hashedPassword });
+			message = 'Updated password';
 		}
 	}
 
 	// Check for username update
-	if (req.body.username_new) {
-		const username = req.body.username_new;
+	let token = null;
+	if (!error && req.body.username_new) {
 		// Ensure this username is not in use
 		const user = db
 			.query("SELECT * FROM users WHERE username = $username")
@@ -354,19 +336,33 @@ router.post("/dashboard", authenticateToken, async (req, res) => {
 			error = `User "${username}" already exists`;
 		}
 		else {
-			// Update the username, which will trigger a logout
+			// Update the username and reissue the auth token
 			db.query(`
 				UPDATE users
 				SET username = $username
 				WHERE id = $user_id
 			`).run({ user_id: req.user.id, username: username });
 
-			message = 'Updated username, please log in again';
+			token = jwt.sign({ username, id: req.user.id }, JWT_KEY, {
+				expiresIn: "5d",
+			});
+
+			// Update the data with the new user and token
+			data.user = jwt.verify(token, JWT_KEY);
+
+			message = 'Updated username';
 		}
 	}
 
-	const qs = '?' + (error ? `error=${error}` : '') + (error && message ? '&' : '') + (message ? `message=${message}` : '');
-	res.redirect(`/dashboard${qs}`);
+	if (token) {
+		res.cookie("auth_token", token, {
+			httpOnly: true,
+			maxAge: 5 * 24 * 60 * 60 * 1000,
+		}).render("dashboard", { ...data, message, error });
+	}
+	else {
+		res.render("dashboard", { ...data, message, error });
+	}
 });
 
 router.get("/create-invite", authenticateAdmin, async (req, res) => {
@@ -382,24 +378,20 @@ router.get("/create-invite", authenticateAdmin, async (req, res) => {
 
 	try {
 		createInvite();
-		let message = 'Created invite'
-		return res.redirect(`/dashboard?message=${message}`);
+		return res.redirect(`/dashboard`);
 	} catch (err) {
 		console.log(err);
-		let error = 'Failed to create invite; check console log';
-		return res.redirect(`/dashboard?error=${error}`);
+		return res.redirect(`/dashboard`);
 	}
 });
 
 router.get("/delete-invite/:id", authenticateToken, async (req, res) => {
 	try {
 		db.run("DELETE FROM invites WHERE id = $id", { id: req.params.id });
-		let message = 'Deleted invite'
-		return res.redirect(`/dashboard?message=${message}`);
+		return res.redirect(`/dashboard`);
 	} catch (err) {
 		console.log(err);
-		let error = 'Failed to delete invite; check console log';
-		return res.redirect(`/dashboard?error=${error}`);
+		return res.redirect(`/dashboard`);
 	}
 });
 
@@ -599,6 +591,40 @@ router.post("/multi-remove", authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+
+function get_dashboard_data(req) {
+	let invites = null;
+	let users = null;
+	const isAdmin = db
+		.query("SELECT isAdmin FROM users WHERE id = $id and isAdmin = 1")
+		.get({
+			id: req.user.id,
+		});
+	if (isAdmin) {
+		invites = db
+			.query("SELECT * FROM invites ORDER BY createdAt DESC")
+			.all()
+			.map((inv) => ({
+				...inv,
+				createdAt: Date.parse(inv.createdAt),
+				usedAt: Date.parse(inv.usedAt),
+			}));
+		
+		users = db
+			.query(`SELECT * FROM users ORDER BY isAdmin DESC, username`)
+			.all();
+	}
+
+	const prefs = get_user_prefs(req.user.id);
+
+	return {
+		user: req.user,
+		invites,
+		users,
+		isAdmin,
+		prefs,
+	};
+}
 
 async function renderIndex(subreddit, req, res) {
 	const multireddit = req.query.lurker_multi;
