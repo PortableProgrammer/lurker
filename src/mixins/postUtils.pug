@@ -60,27 +60,6 @@
     }
   }
 -
-  function convertInlineImageLinks(html) {
-    // Find all anchors that href to preview.redd.it, i/v.redd.it, i.imgur.com
-    // and contain just a link to the same href
-    const expression = /<a href="(http[s]?:\/\/(?:preview\.redd\.it|[iv]\.redd\.it|i\.imgur\.com).*?)">\1?<\/a>/g;
-    const matches = Array.from(html.matchAll(expression));
-    var result = html;
-    matches.forEach((match) => {
-      // Imgur gifv is just an MP4 video with no sound
-      // v.redd.it is a video
-      if (match[1].match(/(?:gifv|mp4|v\.reddi\.it)/i)) {
-        // Replace each occurrence with a video tag
-        result = result.replace(match[0], '<video controls muted data-dashjs-player preload="metadata" poster="' + match[1] + '"><source src="' + match[1] + '"></video>');
-      } else {
-        // Replace each occurrence with an actual img tag
-        result = result.replace(match[0], '<a href="' + match[1] + '"><img class="inline" src="' + match[1] + '"></a>');
-      }
-    })
-
-    return result;
-  }
--
   function decodePostVideoUrls(p) {
     // Video and poster URLs can be HTML-encoded, so decode them.
     const he = require_he;

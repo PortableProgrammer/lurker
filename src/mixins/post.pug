@@ -34,7 +34,7 @@ mixin post(p, currentUrl)
                   h2
                     != p.over_18 ? 'nsfw' : 'spoiler'
               div.self-text.card
-                != convertInlineImageLinks(p.selftext_html)
+                != p.selftext_html
         if prefs.view != "card"
           div.media-preview(class=`${p.is_crosspost ? "crosspost" : ""}`)
             - var onclick = `toggleDetails('${p.id}')`

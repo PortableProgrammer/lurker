@@ -69,7 +69,7 @@ html
 
         if post.selftext_html
           div.self-text
-            != convertInlineImageLinks(post.selftext_html)
+            != post.selftext_html
 
         hr
 

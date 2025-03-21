@@ -70,9 +70,18 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 	response = await G.getSubmissionComments(id, params);
 	const prefs = get_user_prefs(req.user.id);
 
-	const extData = await E.resolveExternalLinks(response.submission.data);
+	const data = unescape_submission(response);
+	const extData = await E.resolveExternalLinks(data.post);
 	if (extData) {
-		E.updatePost(response.submission.data, extData);
+		Object.assign(data.post, extData);
+	}
+
+	if (data.comments) {
+		var extPromises = [];
+		for (const comment of data.comments) {
+			extPromises.push(resolve_comment_links(comment));
+		}
+		await Promise.all(extPromises);
 	}
 
 	res.locals = {
@@ -80,7 +89,7 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 	};
 
 	res.render("comments", {
-		data: unescape_submission(response),
+		data,
 		user: req.user,
 		from: req.query.from,
 		prefs,
@@ -101,7 +110,15 @@ router.get(
 		response = await G.getSingleCommentThread(parent_id, child_id, params);
 		const prefs = get_user_prefs(req.user.id);
 		const comments = response.comments;
-		comments.forEach(unescape_comment);
+
+		if (comments) {
+			comments.forEach(unescape_comment);
+			var extPromises = [];
+			for (const comment of comments) {
+				extPromises.push(resolve_comment_links(comment));
+			}
+			await Promise.all(extPromises);
+		}
 
 		res.locals = {
 			require_he: require("he"),
@@ -899,16 +916,12 @@ async function renderIndex(subreddit, req, res) {
 
 		var extPromises = [];
 		for (const post of posts.posts) {
-			if (post.data.post_hint == 'link') {
-				extPromises.push(E.resolveExternalLinks(post.data));
-			} else {
-				extPromises.push(null);
-			}
+			extPromises.push(E.resolveExternalLinks(post.data));
 		}
 		const extResults = await Promise.all(extPromises);
 		extResults.map((extData, i) => {
 			if (extData) {
-				E.updatePost(posts.posts[i].data, extData);
+				Object.assign(posts.posts[i].data, extData);
 			}
 		});
 	}
@@ -947,6 +960,24 @@ function get_user_prefs(user_id) {
 	}));
 	
 	return prefs[0];
+}
+
+async function resolve_comment_links(comment) {
+	if (comment.data.body_html) {
+		var new_html = await E.resolveExternalInlineLinks(he.decode(comment.data.body_html));
+		comment.data.body_html = new_html;
+	}
+	if (comment.data.replies) {
+		if (comment.data.replies.data) {
+			if (comment.data.replies.data.children) {
+				var promises = [];
+				for (const child of comment.data.replies.data.children) {
+					promises.push(resolve_comment_links(child));
+				}
+				await Promise.all(promises);
+			}
+		}
+	}
 }
 
 function unescape_submission(response) {
