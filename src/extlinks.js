@@ -239,7 +239,7 @@ class ExtLinks {
     }
 
     static async resolveExternalInlineLinks(html) {
-        const expression = /<a href="(http[s]?:\/\/.*?)">\1?<\/a>/g;
+        const expression = /<a.?href="(http[s]?:\/\/.*?)".*?>\1<\/a>/g;
         const matches = Array.from(html.matchAll(expression));
 
         var result = html;
