@@ -36,3 +36,10 @@ const port = process.env.LURKER_PORT;
 const server = app.listen(port ? port : 3000, "0.0.0.0", () => {
 	console.log("started on", server.address());
 });
+
+process.on('SIGTERM', () => {
+	console.log('SIGTERM signal received: closing HTTP server');
+	server.close(() => {
+		console.log('HTTP server closed')
+	});
+});
