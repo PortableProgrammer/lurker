@@ -15,8 +15,8 @@ const E = extlinks.ExtLinks;
 
 // GET /
 router.get("/", authenticateToken, async (req, res) => {
-	const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
-	res.redirect(`/home${qs}`);
+	const qs = req.query ? new URLSearchParams(req.query).toString() : '';
+	res.redirect(`/home${qs ? '?' + qs : ''}`);
 });
 
 // GET /home
@@ -25,10 +25,10 @@ router.get("/home", authenticateToken, async (req, res) => {
 		.query("SELECT * FROM subscriptions WHERE user_id = $id")
 		.all({ id: req.user.id });
 
-	const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
+	const qs = req.query ? new URLSearchParams(req.query).toString() : '';
 
 	if (subs.length === 0) {
-		res.redirect(`/r/all${qs}`);
+		res.redirect(`/r/all${qs ? '?' + qs : ''}`);
 	} else {
 		const p = subs.map((s) => s.subreddit).join("+");
 		renderIndex(p, req, res);
@@ -55,8 +55,8 @@ router.get("/m/:multireddit", authenticateToken, async(req, res) => {
 		renderIndex(subs, req, res);
 	}
 	else {
-		const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
-		res.redirect(`/${qs}`);
+		const qs = req.query ? new URLSearchParams(req.query).toString() : '';
+		res.redirect(`/${qs ? '?' + qs : ''}`);
 	}
 });
 
@@ -167,8 +167,8 @@ router.get("/multi-create", authenticateToken, async (req, res) => {
 	
 	// If this multi already exists, or at least a name has been entered, redirect to multi-edit instead
 	if (multi_exists || req.query.q) {
-		const qs = req.query && req.query.length > 0 ? ('?' + new URLSearchParams(req.query).toString()) : '';
-		res.redirect(`/multi-edit/${multireddit}${qs}`);
+		const qs = req.query ? new URLSearchParams(req.query).toString() : '';
+		res.redirect(`/multi-edit/${multireddit}${qs ? '?' + qs : ''}`);
 	}
 	else {
 		res.render("multireddit", { 
@@ -569,7 +569,7 @@ router.post("/set-pref", authenticateToken, async (req, res) => {
 			SET pref_${preference} = $value
 			WHERE id = $user_id
 		`;
-		db.query(query).run({ user_id: user.id, value: value });
+		await db.query(query).run({ user_id: user.id, value: value });
 		res.status(200).send("Updated successfully");
 	}
 	else {
@@ -644,7 +644,7 @@ function get_dashboard_data(req) {
 }
 
 async function renderIndex(subreddit, req, res) {
-	const multireddit = req.query.lurker_multi;
+	const multireddit = req.params.multireddit;
 	const isMulti = subreddit.includes("+") || multireddit;
 	const query = req.query ? req.query : {};
 
