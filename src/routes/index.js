@@ -414,7 +414,9 @@ router.get("/delete-invite/:id", authenticateToken, async (req, res) => {
 
 // GET /media
 router.get("/media/*url", authenticateToken, async (req, res) => {
-	const url = req.params.url.join('/');
+	// This join sometimes results in urls like "https:/xyz.tld/file.ext", due to one of the elements being null, but this only happens in certain scenarios (and, aggravatingly, not in local Docker development)
+	// Add a replace here to ensure that we always have a good scheme for the URL
+	const url = req.params.url.join('/').replace(/^(http[s]?)\:\/(\w)/, '$1://$2');
 	const ext = url.split(".").pop().toLowerCase();
 	const kind = ["jpg", "jpeg", "png", "gif", "webp"].includes(ext)
 		? "img"
