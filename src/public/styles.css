@@ -281,9 +281,13 @@ nav {
   z-index: 10;
 }
 
+.spoiler > h2 {
+  -webkit-text-stroke: 0.01rem var(--bg-color);
+}
+
 .gallery-item-idx,
 .spoiler > h2 {
-  text-shadow: 0.1rem 0.1rem 1rem var(--bg-color-muted);
+  text-shadow: 0.1rem 0.1rem 1rem var(--bg-color);
 }
 
 .comments-container {
