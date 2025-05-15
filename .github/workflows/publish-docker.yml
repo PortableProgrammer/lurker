@@ -7,6 +7,8 @@ on:
     tags:
       - v*
 
+  workflow_dispatch:
+
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
@@ -23,7 +25,11 @@ jobs:
           PLATFORMS=linux/amd64,linux/arm64
           REPO_OWNER=$(echo ${{ github.repository_owner }} | tr '[:upper:]' '[:lower:]')
 
-          if [[ $GITHUB_REF == refs/tags/* ]]; then
+          if [[ $GITHUB_REF == refs/heads/dev ]] then
+            VERSION=dev
+          fi
+
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
             VERSION=${GITHUB_REF#refs/tags/v}
           fi
           
