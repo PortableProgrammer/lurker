@@ -26,7 +26,7 @@
   }
 -
   function isPostVideo(p) {
-    return (p.post_hint == "hosted:video" || p.is_video);
+    return (p.post_hint == "hosted:video" || p.post_hint == "rich:video" || p.is_video);
   }
 -
   function isPostLink(p) {
@@ -62,12 +62,16 @@
 -
   function decodePostVideoUrls(p) {
     // Video and poster URLs can be HTML-encoded, so decode them.
-    const he = require_he;
-    var hls_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.hls_url ? he.decode(p.secure_media.reddit_video.hls_url) : '';
-    var dash_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.dash_url ? he.decode(p.secure_media.reddit_video.dash_url) : '';
-    var fallback_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.fallback_url ? he.decode(p.secure_media.reddit_video.fallback_url) : '';
-    var scrubber_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.scrubber_media_url ? he.decode(p.secure_media.reddit_video.scrubber_media_url) : '';
-    var poster_url = p.preview && p.preview.images && p.preview.images.length > 0 ? he.decode(p.preview.images[0].source.url) : '';
+    var hls_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.hls_url ? htmlDecode(p.secure_media.reddit_video.hls_url) : '';
+    var dash_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.dash_url ? htmlDecode(p.secure_media.reddit_video.dash_url) : '';
+    var fallback_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.fallback_url ? htmlDecode(p.secure_media.reddit_video.fallback_url) : '';
+    var scrubber_url = p.secure_media && p.secure_media.reddit_video && p.secure_media.reddit_video.scrubber_media_url ? htmlDecode(p.secure_media.reddit_video.scrubber_media_url) : '';
+    var poster_url = p.preview && p.preview.images && p.preview.images.length > 0 ? htmlDecode(p.preview.images[0].source.url) : '';
 
     return [hls_url, dash_url, fallback_url, scrubber_url, poster_url];
+  }
+-
+  function htmlDecode(html) {
+    const he = require_he;
+    return he.decode(html);
   }

@@ -61,8 +61,11 @@ html
             a(href=`/media/${post.url}`)
               img(src=post.url).post-media
           else if isPostVideo(post)
-            - var decodedVideos = decodePostVideoUrls(post)
-            video(data-dashjs-player="" playsinline="" controls="" muted="" preload="metadata" src=decodedVideos[1] poster=decodedVideos[4]).post-media
+            if post.secure_media && post.secure_media.oembed
+              != htmlDecode(post.secure_media.oembed.html)
+            else
+              - var decodedVideos = decodePostVideoUrls(post)
+              video(data-dashjs-player="" playsinline="" controls="" muted="" preload="metadata" src=decodedVideos[1] poster=decodedVideos[4]).post-media
           else if isPostLink(post)
             a(href=post.url)
               | #{post.domain} ↗
