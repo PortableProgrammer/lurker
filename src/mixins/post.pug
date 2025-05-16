@@ -45,8 +45,11 @@ mixin post(p, currentUrl)
               - var url = postThumbnail(p)
               img(src=url onclick=onclick)
             else if isPostVideo(p)
-              - var decodedVideos = decodePostVideoUrls(p)
-              video(data-dashjs-player="" playsinline="" autoplay="" muted="" onclick=`toggleDetails('${p.id}')` src=decodedVideos[3] poster=decodedVideos[4] width="100px" height="100px")
+              if p.secure_media && p.secure_media.oembed && p.thumbnail
+                img(src=htmlDecode(p.thumbnail) onclick=onclick)
+              else
+                - var decodedVideos = decodePostVideoUrls(p)
+                video(data-dashjs-player="" playsinline="" autoplay="" muted="" onclick=`toggleDetails('${p.id}')` src=decodedVideos[3] poster=decodedVideos[4] width="100px" height="100px")
             else if isPostLink(p)
               a(href=p.url)
                 | ↗
@@ -73,8 +76,11 @@ mixin post(p, currentUrl)
             a(href=`/media/${p.url}`)
               img(src=p.url loading="lazy")
           else if isPostVideo(p)
-            - var decodedVideos = decodePostVideoUrls(p)
-            video(data-dashjs-player="" playsinline="" controls="" muted="" preload="metadata" src=decodedVideos[1] poster=decodedVideos[4])
+            if p.secure_media && p.secure_media.oembed
+                != htmlDecode(p.secure_media.oembed.html)
+            else
+              - var decodedVideos = decodePostVideoUrls(p)
+              video(data-dashjs-player="" playsinline="" controls="" muted="" preload="metadata" src=decodedVideos[1] poster=decodedVideos[4])
           else if isPostLink(p)
             a(href=p.url)
               | #{p.domain} ↗

@@ -87,38 +87,41 @@ class ExtLinks {
                 const expression = /^\s+?images\s+?:\s+?(\{\"count\":\d+?,\"images\":\[\{.*\},?\]\})/gm;
                 const matches = data.matchAll(expression);
                 if (matches) {
+                    var images = [];
                     const matchArray = Array.from(matches);
-                    if (matchArray.length == 1) {
+                    matchArray.forEach((match) => {
+                            JSON.parse(match[1]).images.map((img) => {
+                                images.push(img);
+                            });
+                        });
+
+                    if (images.length == 1) {
                         // Single-item, don't treat it as a gallery
                         const video_expression = /(?:gifv|mp4)/i;
-                        JSON.parse(matchArray[0][1]).images.map((img) => {
-                            if (img.ext.match(video_expression)) {
-                                // Probably a gif / video
-                                returnData.secure_media = { reddit_video: {} };
-                                returnData.secure_media.reddit_video.fallback_url = 
-                                    returnData.secure_media.reddit_video.dash_url = 
-                                    returnData.secure_media.reddit_video.hls_url = 
-                                        "https://i.imgur.com/" + img.hash + img.ext;
-                                returnData.thumbnail = "https://i.imgur.com/" + img.hash + ".jpg";
-                                returnData.preview = { images: [ { source: { url: returnData.thumbnail }}]};
-                                returnData.post_hint = "hosted:video";
-                            } else {
-                                // Probably just a normal image
-                                returnData.post_hint = "image";
-                                returnData.url = "https://i.imgur.com/" + img.hash + ".jpg";
-                            }
-                        });
+                        if (images[0].ext.match(video_expression)) {
+                            // Probably a gif / video
+                            returnData.secure_media = { reddit_video: {} };
+                            returnData.secure_media.reddit_video.fallback_url = 
+                                returnData.secure_media.reddit_video.dash_url = 
+                                returnData.secure_media.reddit_video.hls_url = 
+                                    "https://i.imgur.com/" + images[0].hash + images[0].ext;
+                            returnData.thumbnail = "https://i.imgur.com/" + images[0].hash + ".jpg";
+                            returnData.preview = { images: [ { source: { url: returnData.thumbnail }}]};
+                            returnData.post_hint = "hosted:video";
+                        } else {
+                            // Probably just a normal image
+                            returnData.post_hint = "image";
+                            returnData.url = "https://i.imgur.com/" + images[0].hash + ".jpg";
+                        }
                     } else {
                         // Build a gallery with these images
                         returnData.is_gallery = true;
                         returnData.gallery_data = {
                             items: [],
                         };
-                        matchArray.forEach((match) => {
-                            JSON.parse(match[1]).images.map((img) => {
-                                returnData.gallery_data.items.push({
-                                    media_id: "https://i.imgur.com/" + img.hash + ".jpg",
-                                });
+                        images.forEach((img) => {
+                            returnData.gallery_data.items.push({
+                                media_id: "https://i.imgur.com/" + img.hash + ".jpg",
                             });
                         });
                     }
