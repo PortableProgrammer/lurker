@@ -270,7 +270,7 @@ router.get("/post-search", authenticateToken, async (req, res) => {
 			const extResults = await Promise.all(extPromises);
 			extResults.map((extData, i) => {
 				if (extData) {
-					E.updatePost(items[i].data, extData);
+					Object.assign(items[i].data, extData);
 				}
 			});
 		}
