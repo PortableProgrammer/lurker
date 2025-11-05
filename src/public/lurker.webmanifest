@@ -1,0 +1,51 @@
+{
+    "name": "lurker - readonly Reddit client",
+    "short_name": "lurker",
+    "icons": [
+        {
+            "src": "icons/reddit-silhouette.svg",
+            "type": "image/svg+xml"
+        },
+        {
+            "src": "icons/reddit-silhouette-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/reddit-silhouette-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "display": "minimal-ui",
+    "start_url": "/",
+    "shortcuts": [
+        {
+            "name": "home",
+            "description": "home feed",
+            "url": "home",
+            "icons": [
+                {
+                    "src": "icons/reddit-silhouette.svg",
+                    "type": "image/svg+xml"
+                }
+            ]
+        },
+        {
+            "name": "popular",
+            "url": "r/popular"
+        },
+        {
+            "name": "search",
+            "url": "search"
+        },
+        {
+            "name": "subs",
+            "url": "subs"
+        },
+        {
+            "name": "dashboard",
+            "url": "dashboard"
+        }
+    ]
+}
