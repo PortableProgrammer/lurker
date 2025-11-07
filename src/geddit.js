@@ -3,6 +3,7 @@ class Geddit {
 		this.host = "https://www.reddit.com";
 		this.headers = {
 			user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0.1 Safari/605.1.15",
+			referrer: "https://www.reddit.com/",
 		};
 		this.parameters = {
 			limit: 25,
@@ -30,6 +31,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -48,6 +50,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -66,6 +69,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -84,6 +88,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -102,6 +107,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -120,6 +126,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -138,6 +145,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -156,6 +164,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -170,6 +179,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -184,6 +194,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -203,6 +214,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -217,6 +229,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -231,6 +244,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -245,6 +259,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -263,6 +278,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -281,6 +297,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -299,6 +316,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -317,6 +335,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -335,6 +354,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -356,6 +376,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -381,6 +402,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -406,6 +428,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -435,6 +458,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -459,6 +483,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -473,6 +498,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -490,6 +516,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -507,6 +534,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -521,6 +549,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)			
@@ -535,6 +564,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -553,6 +583,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -571,6 +602,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -589,6 +621,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -603,6 +636,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -617,6 +651,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -631,6 +666,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)
@@ -645,6 +681,7 @@ class Geddit {
 			{
 				headers: new Headers( {
 					"User-Agent": this.headers.user_agent,
+					"Referer": this.headers.referrer,
 				})
 			},
 		)

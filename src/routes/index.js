@@ -28,7 +28,7 @@ router.get("/home", authenticateToken, async (req, res) => {
 	const qs = req.query ? new URLSearchParams(req.query).toString() : '';
 
 	if (subs.length === 0) {
-		res.redirect(`/r/all${qs ? '?' + qs : ''}`);
+		res.redirect(`/r/popular${qs ? '?' + qs : ''}`);
 	} else {
 		const p = subs.map((s) => s.subreddit).join("+");
 		renderIndex(p, req, res);
