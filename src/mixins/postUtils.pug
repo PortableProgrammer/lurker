@@ -52,11 +52,41 @@
       return p.gallery_data.items.map((item, idx) => ({
         id: item.media_id,
         url: p.domain == "reddit.com" ? `https://i.redd.it/${item.media_id}.${imgExt(p, item.media_id)}` : item.media_id,
+        srcset: p.media_metadata && p.media_metadata[item.media_id] ? 
+          postGalleryItemSrcSet(p.media_metadata[item.media_id])
+          : '',
         total: p.gallery_data.items.length,
         idx: idx+1,
       }));
     } else {
       return {};
+    }
+  }
+
+  function postImageSrcSet(p) {
+    if (p.preview && p.preview.images) {
+      var srcSet = '';
+      for (const img of 
+        p.preview.images[0].variants && p.preview.images[0].variants.gif ? 
+          p.preview.images[0].variants.gif.resolutions 
+          : p.preview.images[0].resolutions) {
+        srcSet += ` ${htmlDecode(img.url)} ${img.width}w`
+      }
+      return srcSet.replaceAll('w ', 'w, ');
+    } else {
+      return '';
+    }
+  }
+
+  function postGalleryItemSrcSet(media_metadata) {
+    if (media_metadata.p && media_metadata.m != "image/gif") {
+      var srcSet = '';
+      for (const img of media_metadata.p) {
+        srcSet += ` ${htmlDecode(img.u)} ${img.x}w`
+      }
+      return srcSet.replaceAll('w ', 'w, ');
+    } else {
+      return '';
     }
   }
 -

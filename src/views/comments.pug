@@ -54,12 +54,13 @@ html
               each item in postGalleryItems(post)
                 div.gallery-item
                   a(href=`/media/${item.url}`)
-                    img(src=item.url loading="lazy")
+                    img(src=item.url loading="lazy" sizes="auto" srcset=item.srcset)
                   div.gallery-item-idx
                     | #{`${item.idx}/${item.total}`}
           else if isPostImage(post)
             a(href=`/media/${post.url}`)
-              img(src=post.url).post-media
+              - var postSrcSet = postImageSrcSet(post)
+              img(src=post.url loading="lazy" sizes="auto" srcset=postSrcSet).post-media
           else if isPostVideo(post)
             if post.secure_media && post.secure_media.oembed
               != htmlDecode(post.secure_media.oembed.html)

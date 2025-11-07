@@ -69,12 +69,13 @@ mixin post(p, currentUrl)
               each item in postGalleryItems(p)
                 div.gallery-item
                   a(href=`/media/${item.url}`)
-                    img(src=item.url loading="lazy")
+                    img(src=item.url loading="lazy" sizes="auto" srcset=item.srcset)
                   div.gallery-item-idx
                     | #{`${item.idx}/${item.total}`}
           else if isPostImage(p)
+            - var postSrcSet = postImageSrcSet(p)
             a(href=`/media/${p.url}`)
-              img(src=p.url loading="lazy")
+              img(src=p.url loading="lazy" sizes="auto" srcset=postSrcSet)
           else if isPostVideo(p)
             if p.secure_media && p.secure_media.oembed
                 != htmlDecode(p.secure_media.oembed.html)
