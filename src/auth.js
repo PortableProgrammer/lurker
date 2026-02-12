@@ -55,7 +55,7 @@ function authenticateAdmin(req, res, next) {
 			res.status(400).send("only admins can invite");
 		}
 	} catch (error) {
-		res.send(`failed to authenticate as admin: ${error}`);
+		res.status(403).send("failed to authenticate as admin");
 	}
 }
 

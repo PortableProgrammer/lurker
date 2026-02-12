@@ -133,7 +133,7 @@ html
                   td #{user_row.isAdmin ? 'yes' : 'no'}
                   td 
                     if user.id !== user_row.id && users.length > 1
-                      a(href=`/delete-user/${user.id}` onclick=`areYouSure(event, 'user', '${user.username}')`) delete
+                      a(href=`/delete-user/${user_row.id}` onclick=`areYouSure(event, 'user', '${user_row.username}')`) delete
                     else
                       | current user
 
