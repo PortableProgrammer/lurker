@@ -1,0 +1,19 @@
+{
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "1.3.5",
+      "resolved": "ghcr.io/devcontainers/features/git@sha256:27905dc196c01f77d6ba8709cb82eeaf330b3b108772e2f02d1cd0d826de1251",
+      "integrity": "sha256:27905dc196c01f77d6ba8709cb82eeaf330b3b108772e2f02d1cd0d826de1251"
+    },
+    "ghcr.io/shyim/devcontainers-features/bun:0": {
+      "version": "0.0.1",
+      "resolved": "ghcr.io/shyim/devcontainers-features/bun@sha256:689eae681aa08981175829a59953ba67a7d311f6a05c15d1bbbcb2da2839827e",
+      "integrity": "sha256:689eae681aa08981175829a59953ba67a7d311f6a05c15d1bbbcb2da2839827e"
+    },
+    "ghcr.io/warrenbuckley/codespace-features/sqlite:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/warrenbuckley/codespace-features/sqlite@sha256:4fdf50a6929f918c8208efc7416b6505f5ca085d71e37c3003367ed2855bbf76",
+      "integrity": "sha256:4fdf50a6929f918c8208efc7416b6505f5ca085d71e37c3003367ed2855bbf76"
+    }
+  }
+}
