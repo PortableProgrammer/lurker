@@ -1,4 +1,4 @@
-FROM oven/bun:latest
+FROM oven/bun:1
 ADD ./ ./
 RUN mkdir -p /data
 WORKDIR /data

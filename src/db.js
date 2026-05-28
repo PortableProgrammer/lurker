@@ -161,7 +161,7 @@ runMigration("lazy-delete-sessions", () => {
   // Remove the UNIQUE constraint from `sessions`
   // Add FK with cascade delete to `views`
   db.run(`
-    PRAGMA foriegn_keys=off;
+    PRAGMA foreign_keys=off;
     
     BEGIN TRANSACTION;
 
@@ -199,7 +199,7 @@ runMigration("lazy-delete-sessions", () => {
 
     COMMIT;
 
-    PRAGMA foriegn_keys=on;
+    PRAGMA foreign_keys=on;
   `);
 });
 
