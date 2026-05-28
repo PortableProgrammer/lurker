@@ -228,6 +228,13 @@ router.get("/sub-search", authenticateToken, async (req, res) => {
 	} else {
 		const prefs = get_user_prefs(req.user.id);
 		const { items, after } = await G.searchSubreddits(req.query.q);
+		if (items) {
+			items.forEach((item) => {
+				if (item.data && item.data.public_description) {
+					item.data.public_description = he.decode(item.data.public_description);
+				}
+			});
+		}
 		const subs = db
 			.query("SELECT subreddit FROM subscriptions WHERE user_id = $id")
 			.all({ id: req.user.id })
