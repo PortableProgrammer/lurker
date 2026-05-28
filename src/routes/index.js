@@ -67,7 +67,7 @@ router.get("/comments/:id", authenticateToken, async (req, res) => {
 	const params = {
 		limit: 50,
 	};
-	response = await G.getSubmissionComments(id, params);
+	const response = await G.getSubmissionComments(id, params);
 	const prefs = get_user_prefs(req.user.id);
 
 	const data = unescape_submission(response);
@@ -107,7 +107,7 @@ router.get(
 		const params = {
 			limit: 50,
 		};
-		response = await G.getSingleCommentThread(parent_id, child_id, params);
+		const response = await G.getSingleCommentThread(parent_id, child_id, params);
 		const prefs = get_user_prefs(req.user.id);
 		const comments = response.comments;
 
@@ -402,7 +402,7 @@ router.get("/create-invite", authenticateAdmin, async (req, res) => {
 	}
 });
 
-router.get("/delete-invite/:id", authenticateToken, async (req, res) => {
+router.get("/delete-invite/:id", authenticateAdmin, async (req, res) => {
 	try {
 		db.run("DELETE FROM invites WHERE id = $id", { id: req.params.id });
 		return res.redirect(`/dashboard`);
@@ -505,7 +505,7 @@ router.post("/login", async (req, res) => {
 				httpOnly: true,
 				maxAge: 5 * 24 * 60 * 60 * 1000,
 			})
-			.redirect(req.query.redirect || "/");
+			.redirect(req.query.redirect && req.query.redirect.startsWith("/") && !req.query.redirect.startsWith("//") ? req.query.redirect : "/");
 	} else {
 		res.render("login", {
 			message: "invalid credentials, try again",
@@ -563,14 +563,16 @@ router.post("/unsubscribe", authenticateToken, async (req, res) => {
 router.post("/set-pref", authenticateToken, async (req, res) => {
 	const { preference, value} = req.body;
 	const user = req.user;
-	const validPrefs = ['sort', 'view', 'collapseAutoMod', 'trackSessions']
-	
-	if (validPrefs.includes(preference)) {
-		var query = `
-			UPDATE users
-			SET pref_${preference} = $value
-			WHERE id = $user_id
-		`;
+	const prefToColumn = {
+		sort: 'pref_sort',
+		view: 'pref_view',
+		collapseAutoMod: 'pref_collapseAutomod',
+		trackSessions: 'pref_trackSessions',
+	};
+	const column = prefToColumn[preference];
+
+	if (column) {
+		const query = `UPDATE users SET ${column} = $value WHERE id = $user_id`;
 		await db.query(query).run({ user_id: user.id, value: value });
 		res.status(200).send("Updated successfully");
 	}
